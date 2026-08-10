@@ -1,0 +1,200 @@
+/* COACH PROFILE DETAILED VIEW STYLES */
+
+.coach-profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Premium Card wrapper */
+.profile-card-premium {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 2.25rem;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* 2-Column Coach Info Grid */
+.coach-info-columns {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 2.5rem;
+}
+
+@media (max-width: 768px) {
+  .coach-info-columns {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* Photo upload area */
+.photo-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar-circle-wrapper {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 4px solid var(--border-color);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  transition: border-color 0.2s ease;
+}
+
+.avatar-circle-wrapper:hover {
+  border-color: var(--accent-blue);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-cover: cover;
+}
+
+.avatar-placeholder-char {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+}
+
+.avatar-overlay-upload {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: opacity 0.2s ease;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.avatar-circle-wrapper:hover .avatar-overlay-upload {
+  opacity: 1;
+}
+
+/* Detailed Information Grid */
+.coach-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem 2rem;
+}
+
+.details-row-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+}
+
+.details-row-item .detail-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.details-row-item .detail-val {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Coach Metrics Grid fixes */
+.coach-metrics-grid-premium {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.metric-card-premium {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease;
+}
+
+.metric-card-premium:hover {
+  transform: translateY(-2px);
+}
+
+.metric-card-premium.green { border-left: 4px solid var(--accent-green); }
+.metric-card-premium.orange { border-left: 4px solid var(--accent-orange); }
+.metric-card-premium.yellow { border-left: 4px solid var(--accent-yellow); }
+.metric-card-premium.purple { border-left: 4px solid var(--accent-purple); }
+.metric-card-premium.blue { border-left: 4px solid var(--accent-blue); }
+
+.metric-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-card-premium.green .metric-icon-box { color: var(--accent-green); }
+.metric-card-premium.orange .metric-icon-box { color: var(--accent-orange); }
+.metric-card-premium.yellow .metric-icon-box { color: var(--accent-yellow); }
+.metric-card-premium.purple .metric-icon-box { color: #c084fc; }
+.metric-card-premium.blue .metric-icon-box { color: var(--accent-blue); }
+
+.metric-numbers-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-val-premium {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.metric-lbl-premium {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* Action button edit/save styles */
+.action-buttons-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
