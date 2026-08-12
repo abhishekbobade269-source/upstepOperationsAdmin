@@ -28,7 +28,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<string>(() => {
     return localStorage.getItem('upstep_active_tab') || 'grid';
   });
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
   // Application Data States (Loaded from localStorage or defaults)
   const [coaches, setCoaches] = useState<Coach[]>(() => {

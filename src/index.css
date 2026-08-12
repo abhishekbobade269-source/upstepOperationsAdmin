@@ -123,34 +123,49 @@ body.light-mode .avatar-circle-wrapper {
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: var(--font-family);
   background-color: var(--bg-primary);
   color: var(--text-main);
-  min-height: 100vh;
   line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-/* GLOBAL DARK MODE INPUT STYLING - NEVER WHITE BACKGROUND */
+/* App root — fills the #root container, header fixed at top, content scrolls */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* GLOBAL INPUT STYLING - uses CSS vars so dark/light mode both work */
 input[type="text"],
 input[type="number"],
 input[type="email"],
 input[type="password"],
+input[type="date"],
 select,
 textarea,
 .text-input,
 .select-input,
 .text-input-sm,
 .select-input-sm {
-  background-color: #0b132b !important;
-  color: #f8fafc !important;
+  background-color: var(--bg-card, #0b132b) !important;
+  color: var(--text-main, #f8fafc) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: 8px;
   padding: 0.55rem 0.85rem;
@@ -161,6 +176,7 @@ textarea,
 
 body.light-mode input[type="text"],
 body.light-mode input[type="number"],
+body.light-mode input[type="date"],
 body.light-mode select,
 body.light-mode textarea,
 body.light-mode .text-input,
@@ -347,14 +363,20 @@ input:focus, select:focus, textarea:focus,
   border-bottom-color: var(--accent-gold);
 }
 
-/* Main Layout Container */
+/* Main Layout Container — this is the scroll zone, NOT the whole page */
 .main-container {
   padding: 1.5rem;
-  max-width: 1650px;
   width: 100%;
-  margin: 0 auto;
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* smooth scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
+.main-container::-webkit-scrollbar { width: 6px; }
+.main-container::-webkit-scrollbar-track { background: transparent; }
+.main-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
 
 /* Cards & Glass Containers */
 .section-header-card, 
@@ -1001,16 +1023,24 @@ input:focus, select:focus, textarea:focus,
    columns and interactive header-click date expansion.
    ======================================================== */
 
-/* Scroll wrapper — enables both horizontal & vertical scroll */
+/* Scroll wrapper — fills remaining height, both-direction scrollable */
 .cal-table-wrap {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100vh - 245px);
+  /* Height fills the card without causing the outer page to scroll */
+  max-height: calc(100vh - 300px);
+  height: calc(100vh - 300px);
   border-radius: 12px;
   border: 1px solid var(--border-color);
   position: relative;
   background: var(--bg-card);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
+.cal-table-wrap::-webkit-scrollbar { width: 7px; height: 7px; }
+.cal-table-wrap::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+.cal-table-wrap::-webkit-scrollbar-track { background: transparent; }
 
 /* Main calendar table */
 .cal-table {
