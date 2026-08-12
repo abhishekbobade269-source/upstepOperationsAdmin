@@ -653,7 +653,7 @@ input:focus, select:focus, textarea:focus,
   z-index: 5;
 }
 
-/* Slot Booking Modal Positioning & Overlay Fix */
+/* Slot Booking Modal Positioning & Overlay Fix — Pinned Footer & Inner Scrollable Body */
 .modal-overlay {
   position: fixed !important;
   top: 0 !important;
@@ -666,32 +666,38 @@ input:focus, select:focus, textarea:focus,
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 1.5rem !important;
+  padding: 1.25rem !important;
 }
 
 .modal-card {
-  background: #1c2541 !important;
-  border: 1px solid #2e3d66 !important;
-  border-radius: 16px !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 18px !important;
   width: 100% !important;
-  max-width: 620px !important;
-  padding: 1.75rem !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
-  color: #f8fafc !important;
+  max-width: 640px !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75) !important;
+  color: var(--text-main) !important;
 }
 
 .modal-header {
+  flex-shrink: 0 !important;
   display: flex !important;
   align-items: flex-start !important;
   justify-content: space-between !important;
   border-bottom: 1px solid var(--border-color) !important;
-  padding-bottom: 1rem !important;
-  margin-bottom: 1.25rem !important;
+  padding: 1.15rem 1.35rem !important;
+  margin-bottom: 0 !important;
+  background: var(--bg-card) !important;
 }
 
 .modal-header h3 {
   font-family: var(--heading-font);
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
@@ -716,9 +722,29 @@ input:focus, select:focus, textarea:focus,
 }
 
 .modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  flex: 1 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 1.25rem 1.35rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.15rem !important;
+  /* Scrollbar styling */
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--border-color) transparent !important;
+}
+
+.modal-footer {
+  flex-shrink: 0 !important;
+  padding: 0.95rem 1.35rem !important;
+  border-top: 1px solid var(--border-color) !important;
+  background: var(--bg-card) !important;
+  margin-top: 0 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  z-index: 10 !important;
 }
 
 .alert-banner.red {
@@ -1962,15 +1988,16 @@ body.light-mode .booking-date-input-wrap input[type="date"] { background: #fff; 
 
   /* Mobile Bottom Sheet Modal */
   .modal-overlay {
-    align-items: flex-end;
-    padding: 0;
+    align-items: flex-end !important;
+    padding: 0 !important;
   }
 
+  .modal-card,
   .modal-content {
     width: 100% !important;
     max-width: 100% !important;
     border-radius: 20px 20px 0 0 !important;
-    max-height: 88vh !important;
+    max-height: 90vh !important;
     animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -1980,7 +2007,7 @@ body.light-mode .booking-date-input-wrap input[type="date"] { background: #fff; 
   }
 
   .modal-footer {
-    flex-direction: column-reverse;
+    flex-direction: row !important;
   }
 
   .modal-footer button {
