@@ -11,6 +11,7 @@ interface ScheduleGridProps {
   highlightedCoachTarget?: { coachName: string; day?: string } | null;
   onSelectSlot: (slot: Slot) => void;
   onOpenBookingModal: (coach: Coach, day: string, startTime: string, endTime: string) => void;
+  onSwitchToCalendarView?: () => void;
 }
 
 export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
@@ -19,7 +20,8 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
   conflicts = [],
   highlightedCoachTarget = null,
   onSelectSlot,
-  onOpenBookingModal
+  onOpenBookingModal,
+  onSwitchToCalendarView
 }) => {
   const [viewMode, setViewMode] = useState<'weekdays' | 'weekend'>(() => {
     const saved = localStorage.getItem('upstep_grid_view_mode');
@@ -280,6 +282,17 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
             <AlertTriangle className="icon-sm" />
             {highlightConflicts ? 'Highlight Conflicts (ON)' : 'Highlight Conflicts (OFF)'}
           </button>
+
+          {onSwitchToCalendarView && (
+            <button
+              type="button"
+              className="btn-switch-view"
+              onClick={onSwitchToCalendarView}
+              title="Switch to Date-Wise Calendar Grid View"
+            >
+              📅 Switch to Calendar View
+            </button>
+          )}
         </div>
       </div>
 

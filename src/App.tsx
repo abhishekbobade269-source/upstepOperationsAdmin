@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Role, Coach, Slot, ShiftTemplate, SlotStatusType, AuditRuleConfig } from './types';
+import type { Role, Coach, Slot, ShiftTemplate, SlotStatusType, AuditRuleConfig, DateSlotOverride } from './types';
 import { INITIAL_COACHES, INITIAL_SHIFTS, INITIAL_SLOTS } from './mockData';
 import { isTemporaryOrDemo, addMinutesToTime } from './utils/shiftUtils';
 import { detectScheduleConflicts, DEFAULT_RULE_CONFIG } from './utils/conflictDetector';
@@ -13,6 +13,8 @@ import { CustomShiftBuilder } from './components/CustomShiftBuilder';
 import { CoachOnboarding } from './components/CoachOnboarding';
 import { ConflictAudit } from './components/ConflictAudit';
 import { DailyDemoSlotsHub } from './components/DailyDemoSlotsHub';
+import { SameDayDemoTracker } from './components/SameDayDemoTracker';
+import { CalendarScheduleGrid } from './components/CalendarScheduleGrid';
 import { SlotBookingModal } from './components/SlotBookingModal';
 import './index.css';
 
@@ -69,6 +71,53 @@ export function App() {
   useEffect(() => {
     localStorage.setItem('upstep_ignored_conflicts', JSON.stringify(ignoredConflictIds));
   }, [ignoredConflictIds]);
+
+  const [dateOverrides, setDateOverrides] = useState<DateSlotOverride[]>(() => {
+    const saved = localStorage.getItem('upstep_date_overrides');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('upstep_date_overrides', JSON.stringify(dateOverrides));
+  }, [dateOverrides]);
+
+  const handleSaveDateOverride = (
+    newOverride: DateSlotOverride,
+    startDateRange?: string,
+    endDateRange?: string
+  ) => {
+    if (!startDateRange || !endDateRange || startDateRange === endDateRange) {
+      setDateOverrides(prev => [
+        newOverride,
+        ...prev.filter(o => !(o.slot_id === newOverride.slot_id && o.target_date === newOverride.target_date))
+      ]);
+    } else {
+      const start = new Date(startDateRange);
+      const end = new Date(endDateRange);
+      const newOverridesList: DateSlotOverride[] = [];
+
+      const curr = new Date(start);
+      while (curr <= end) {
+        const dateIso = curr.toISOString().split('T')[0];
+        newOverridesList.push({
+          ...newOverride,
+          id: `override-${Date.now()}-${dateIso}`,
+          target_date: dateIso
+        });
+        curr.setDate(curr.getDate() + 1);
+      }
+
+      setDateOverrides(prev => [
+        ...newOverridesList,
+        ...prev.filter(o => {
+          if (o.slot_id === newOverride.slot_id && o.target_date >= startDateRange && o.target_date <= endDateRange) {
+            return false;
+          }
+          return true;
+        })
+      ]);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('upstep_rule_config', JSON.stringify(ruleConfig));
@@ -382,6 +431,19 @@ export function App() {
             highlightedCoachTarget={highlightedCoachTarget}
             onSelectSlot={handleSelectSlotCell}
             onOpenBookingModal={handleOpenBookingForCoach}
+            onSwitchToCalendarView={() => setActiveTab('calendar_grid')}
+          />
+        </div>
+
+        <div style={{ display: activePortal === 'management' && activeTab === 'calendar_grid' ? 'block' : 'none' }}>
+          <CalendarScheduleGrid
+            coaches={coaches}
+            slots={slots}
+            dateOverrides={dateOverrides}
+            onSelectSlot={handleSelectSlotCell}
+            onOpenBookingModal={handleOpenBookingForCoach}
+            onSaveDateOverride={handleSaveDateOverride}
+            onSwitchToMasterGrid={() => setActiveTab('grid')}
           />
         </div>
 
@@ -413,6 +475,13 @@ export function App() {
             coaches={coaches}
             slots={slots}
             onUpdateCoach={handleUpdateCoach}
+          />
+        </div>
+
+        <div style={{ display: activePortal === 'management' && activeTab === 'sameday_demo_tracker' ? 'block' : 'none' }}>
+          <SameDayDemoTracker
+            coaches={coaches}
+            slots={slots}
           />
         </div>
 

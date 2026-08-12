@@ -166,6 +166,14 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
               <button
                 type="button"
+                className={`sub-nav-btn ${activeTab === 'calendar_grid' ? 'active' : ''}`}
+                onClick={() => setActiveTab('calendar_grid')}
+              >
+                <Calendar className="icon-sm text-gold" />
+                📅 Date-Wise Calendar Grid
+              </button>
+              <button
+                type="button"
                 className={`sub-nav-btn ${activeTab === 'search' ? 'active' : ''}`}
                 onClick={() => setActiveTab('search')}
               >
@@ -179,6 +187,14 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Clock className="icon-sm text-gold" />
                 🔁 Daily Slots 2.0 (Demo Slots)
+              </button>
+              <button
+                type="button"
+                className={`sub-nav-btn ${activeTab === 'sameday_demo_tracker' ? 'active' : ''}`}
+                onClick={() => setActiveTab('sameday_demo_tracker')}
+              >
+                <AlertTriangle className="icon-sm text-amber" />
+                ⚡ Same-Day Demo Tracker
               </button>
               <button
                 type="button"

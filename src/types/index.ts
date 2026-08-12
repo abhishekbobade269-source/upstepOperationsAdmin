@@ -85,6 +85,22 @@ export interface Slot {
   status_type: SlotStatusType;
   activity: string; // Batch Code (e.g. SIN-MPI-466), BREAK, Report-building time, etc.
   notes?: string;
+  start_date?: string; // ISO date "YYYY-MM-DD" e.g. "2026-08-01"
+  end_date?: string;   // ISO date "YYYY-MM-DD" e.g. "2026-09-15" (expiry date)
+}
+
+export interface DateSlotOverride {
+  id: string;
+  slot_id: number;
+  coach_id: number;
+  target_date: string; // ISO Date "YYYY-MM-DD" (e.g. "2026-08-10")
+  status_type: SlotStatusType; // 'DEMO_CLASS' | 'SUBSTITUTE_CLASS' | 'TEMPORARY_CLASS' | 'BATCH_LEVEL_BREAK' | 'AVAILABLE' | 'OFF_DUTY'
+  activity: string; // e.g. "X Demo", "Sub - Coach Anand", "Demo-71559", "Inactive 10-12 Aug"
+  substitute_coach_id?: number;
+  substitute_coach_name?: string;
+  sub_slot_1?: DemoSubSlot; // 1st 20 Mins (0-20m)
+  sub_slot_2?: DemoSubSlot; // 2nd 20 Mins (25-45m)
+  notes?: string;
 }
 
 export interface ShiftSlotDefinition {
@@ -172,4 +188,24 @@ export interface DailyDemoSlotBlock {
   demo_preference: string;   // "Preference 1", "Preference 2", "Preference 3", "Not to be given", etc.
   demo_preference_color: string; // Green (#00ff00), Light Green (#90ee90), Yellow (#ffff00), Red (#ff0000)
   is_no_demo_highlighted: boolean; // Pink highlight (#EA9999) if Foundation & Master Demo are both No/Hold/Ineligible
+}
+
+export interface SameDayDemoRequest {
+  id: string;
+  srn_no: string;              // e.g. "SRN115408", "SRN115431"
+  demo_no?: string;            // e.g. "Demo-71559", "Demo-71389"
+  demo_date: string;           // e.g. "2026-08-10"
+  student_name: string;        // e.g. "Advik Tripathi", "Rimphy", "Aaryan"
+  sales_person_name: string;   // e.g. "Jeenal", "Iwin", "Azam", "Mahesh", "Smriti"
+  country_name: string;        // e.g. "India", "USA", "UK", "Other Countries", "AUS", "SIN", "UAE"
+  slot_requested: string;      // e.g. "6-8pm", "09:00", "5.10am", "02:15-3:25"
+  sales_remark?: string;       // e.g. "good friendly interactive coach", "chess.com 1200"
+  coach_preference?: string;   // e.g. "Tushar S", "Excellent Coach"
+  sales_confirmation: 'Pending' | 'Confirm' | 'Rejected';
+  slot_allotted?: string;      // e.g. "21:10", "11:25", "15:55"
+  coach_assigned_id?: number;
+  coach_assigned_name?: string;
+  demo_status: 'Pending' | 'Assigned on Portal' | 'Not Update on portal' | 'Released';
+  operations_remark?: string;  // e.g. "40 min", "IMP DEMO"
+  created_at: string;
 }

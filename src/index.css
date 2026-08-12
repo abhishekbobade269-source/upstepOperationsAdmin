@@ -994,3 +994,321 @@ input:focus, select:focus, textarea:focus,
 .mt-3 { margin-top: 0.75rem; }
 .font-bold { font-weight: 700; }
 .font-mono { font-family: monospace; }
+
+/* ========================================================
+   CALENDAR SCHEDULE GRID — DEDICATED STYLES
+   Full-screen per-coach calendar matrix with sticky time
+   columns and interactive header-click date expansion.
+   ======================================================== */
+
+/* Scroll wrapper — enables both horizontal & vertical scroll */
+.cal-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 245px);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  position: relative;
+  background: var(--bg-card);
+}
+
+/* Main calendar table */
+.cal-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  font-size: 0.84rem;
+}
+
+/* ---- STICKY LEFT: Start Time column (z=20, left=0) ---- */
+.cal-th-sticky-left,
+.cal-td-sticky-left {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  background: var(--bg-card);
+  border-right: 2px solid var(--border-color);
+  min-width: 88px;
+  max-width: 88px;
+  width: 88px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- STICKY LEFT 2: End Time column (z=20, left=88px) ---- */
+.cal-th-sticky-left2,
+.cal-td-sticky-left2 {
+  position: sticky;
+  left: 88px;
+  z-index: 20;
+  background: var(--bg-card);
+  border-right: 2px solid var(--accent-gold);
+  min-width: 88px;
+  max-width: 88px;
+  width: 88px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Sticky Top: Date header cells ---- */
+.cal-th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-secondary, #1a2540);
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  min-width: 158px;
+  border-bottom: 2px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease;
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.cal-th:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+
+/* Corner top-left cells must beat both sticky directions: z=30 */
+.cal-th-sticky-left {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  background: var(--bg-card);
+}
+.cal-th-sticky-left2 {
+  position: sticky;
+  top: 0;
+  left: 88px;
+  z-index: 30;
+  background: var(--bg-card);
+}
+
+/* Expanded date header — blue accent when a column is expanded */
+.cal-th.cal-expanded-header {
+  background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(99,102,241,0.22));
+  border-bottom: 2px solid #3b82f6;
+  color: #93c5fd;
+  min-width: unset; /* colSpan=2 handles width naturally */
+}
+
+/* Sub-slot column headers (1st 20 Min / 2nd 20 Min) */
+.cal-th-subslot {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(59, 130, 246, 0.13);
+  padding: 0.42rem 0.35rem;
+  text-align: center;
+  min-width: 118px;
+  border-bottom: 2px solid #3b82f6;
+  border-right: 1px solid rgba(59, 130, 246, 0.25);
+  font-size: 0.7rem;
+  color: #93c5fd;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* Regular date data cells */
+.cal-td {
+  padding: 0.5rem 0.4rem;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+  min-width: 158px;
+  transition: background 0.1s;
+}
+
+/* Sub-slot data cells (inside expanded columns) */
+.cal-td-subslot {
+  padding: 0.42rem 0.32rem;
+  border-right: 1px solid rgba(59, 130, 246, 0.2);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: top;
+  min-width: 118px;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.cal-td-subslot:hover,
+.cal-td:hover {
+  filter: brightness(1.07);
+}
+
+/* Today column highlight */
+.cal-th.cal-today-header {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #0f172a;
+  font-weight: 800;
+}
+
+/* Slot cell inner content wrapper */
+.cal-cell-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  min-height: 36px;
+}
+
+/* Sub-slot free / booked state chip inside expanded column */
+.cal-subslot-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.18rem 0.45rem;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.cal-subslot-label.free {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.cal-subslot-label.booked {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.cal-subslot-label.break {
+  background: rgba(147, 51, 234, 0.18);
+  color: #c084fc;
+  border: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+/* Override badge pill inside calendar cells */
+.cal-override-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  white-space: nowrap;
+}
+
+/* View span mode toggle buttons */
+.cal-span-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.cal-span-tab {
+  padding: 0.35rem 0.7rem;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.cal-span-tab:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.cal-span-tab.active {
+  background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(99,102,241,0.25));
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.6);
+  font-weight: 700;
+}
+
+/* Switch to calendar / back to grid button (in toolbar) */
+.btn-switch-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--accent-gold);
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent-gold);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-switch-view:hover {
+  background: rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+/* Coach profile mini-card inside calendar toolbar */
+.cal-coach-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  font-size: 0.84rem;
+}
+
+.cal-coach-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Expand hint text on date header */
+.cal-expand-hint {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 500;
+  opacity: 0.65;
+  margin-top: 0.1rem;
+}
+
+/* Light mode overrides for calendar */
+body.light-mode .cal-table-wrap { border-color: #cbd5e1; background: #fff; }
+body.light-mode .cal-th { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
+body.light-mode .cal-th.cal-expanded-header { background: rgba(59,130,246,0.1); color: #1d4ed8; }
+body.light-mode .cal-th-subslot { background: rgba(59,130,246,0.08); color: #1d4ed8; }
+body.light-mode .cal-td { border-color: #e2e8f0; }
+body.light-mode .cal-td-subslot { background: rgba(59,130,246,0.04); border-color: #bfdbfe; }
+body.light-mode .cal-th-sticky-left,
+body.light-mode .cal-td-sticky-left,
+body.light-mode .cal-th-sticky-left2,
+body.light-mode .cal-td-sticky-left2 { background: #fff; border-color: #cbd5e1; }
+body.light-mode .cal-span-tab { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+body.light-mode .cal-span-tab.active { background: rgba(59,130,246,0.1); color: #1d4ed8; border-color: #93c5fd; }
+body.light-mode .cal-coach-card { background: rgba(59,130,246,0.05); border-color: #bfdbfe; }
+body.light-mode .btn-switch-view { background: rgba(245,158,11,0.08); color: #d97706; border-color: #f59e0b; }
+

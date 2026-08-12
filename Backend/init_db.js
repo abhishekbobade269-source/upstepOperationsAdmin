@@ -4,27 +4,35 @@ require('dotenv').config();
 async function initDB() {
   console.log('Connecting to MySQL server...');
   console.log('Host:', process.env.DB_HOST);
+  console.log('Port:', process.env.DB_PORT || 3306);
   console.log('User:', process.env.DB_USER);
+  console.log('Database Name:', process.env.DB_NAME);
+
+  const connectionOptions = {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+  };
 
   try {
-    // Connect without specifying database to create it first
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD
-    });
-
-    console.log('Creating database "coachschedular" if it doesn\'t exist...');
-    await connection.query('CREATE DATABASE IF NOT EXISTS coachschedular');
-    console.log('Database created/verified successfully!');
-    await connection.end();
+    // For cloud environments (like Aiven), DB_NAME is usually 'defaultdb' and already exists.
+    // We only try to create the database if it's NOT 'defaultdb'.
+    if (process.env.DB_NAME && process.env.DB_NAME !== 'defaultdb') {
+      console.log(`Creating database "${process.env.DB_NAME}" if it doesn't exist...`);
+      const connection = await mysql.createConnection(connectionOptions);
+      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
+      console.log('Database created/verified successfully!');
+      await connection.end();
+    } else {
+      console.log('Skipping database creation step (using pre-existing database)...');
+    }
 
     // Reconnect to the database to create the table
     const dbConnection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME // coachschedular
+      ...connectionOptions,
+      database: process.env.DB_NAME || 'coachschedular'
     });
 
     console.log('Creating table "coaches_data" if it doesn\'t exist...');

@@ -1,4 +1,4 @@
-import type { Coach, Slot } from '../types';
+import type { Coach, Slot, SlotStatusType, DemoSubSlot, DateSlotOverride } from '../types';
 
 export const DAYS_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -90,4 +90,91 @@ export function getAdjustedSlotDay(
 export function isTemporaryOrDemo(activity: string): boolean {
   if (!activity) return false;
   return activity.trim().toUpperCase().startsWith('X');
+}
+
+export function formatDateIso(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function formatDateDisplay(date: Date): string {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return `${days[date.getDay()]} ${date.getDate()}-${months[date.getMonth()]}`;
+}
+
+export function getWeekStartMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function getWeekDates(baseDate: Date): Date[] {
+  const mon = getWeekStartMonday(baseDate);
+  const dates: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+export interface ResolvedSlotState {
+  status_type: SlotStatusType;
+  activity: string;
+  is_override: boolean;
+  substitute_coach_name?: string;
+  sub_slot_1?: DemoSubSlot;
+  sub_slot_2?: DemoSubSlot;
+  override_notes?: string;
+}
+
+export function resolveSlotStatusForDate(
+  slot: Slot,
+  targetDateStr: string,
+  dateOverrides: DateSlotOverride[] = []
+): ResolvedSlotState {
+  // 1. Check Date-Specific Overrides
+  const override = dateOverrides.find(o => o.slot_id === slot.id && o.target_date === targetDateStr);
+  if (override) {
+    return {
+      status_type: override.status_type,
+      activity: override.activity,
+      is_override: true,
+      substitute_coach_name: override.substitute_coach_name,
+      sub_slot_1: override.sub_slot_1,
+      sub_slot_2: override.sub_slot_2,
+      override_notes: override.notes
+    };
+  }
+
+  // 2. Check Permanent Class Start and Expiry (End) Dates
+  if (slot.start_date && targetDateStr < slot.start_date) {
+    return {
+      status_type: 'AVAILABLE',
+      activity: 'X',
+      is_override: false
+    };
+  }
+
+  if (slot.end_date && targetDateStr > slot.end_date) {
+    return {
+      status_type: 'AVAILABLE',
+      activity: 'X (Expired)',
+      is_override: false
+    };
+  }
+
+  // 3. Fallback to original permanent schedule status
+  return {
+    status_type: slot.status_type,
+    activity: slot.activity,
+    is_override: false
+  };
 }
