@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { authenticateUser, getRoleTitle } from '../utils/userStorage';
 import type { AuthUser } from '../types';
 import { User, Lock, ArrowRight, Eye, EyeOff, Users, BookOpen, Trophy } from 'lucide-react';
@@ -7,13 +7,28 @@ interface LoginPageProps {
   onLogin: (user: AuthUser) => void;
 }
 
+const BG_IMAGES = [
+  '/login_bg/bg1.png',
+  '/login_bg/bg2.png',
+  '/login_bg/bg3.png'
+];
+
 export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+  const [activeBgIndex, setActiveBgIndex] = useState(0);
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto rotate background every 10 seconds if user doesn't manually click
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveBgIndex(prev => (prev + 1) % BG_IMAGES.length);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +64,16 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
 
   return (
     <div className="chess-login-page">
-      {/* Background Image Container with Gradient Overlays */}
-      <div 
-        className="chess-login-bg"
-        style={{ backgroundImage: `url(/chess_bg.png)` }}
-      />
+      {/* Background Images Layer with smooth crossfade */}
+      {BG_IMAGES.map((bgUrl, idx) => (
+        <div
+          key={bgUrl}
+          className={`chess-login-bg ${activeBgIndex === idx ? 'active' : ''}`}
+          style={{ backgroundImage: `url(${bgUrl})` }}
+        />
+      ))}
+
+      {/* Dark Vignette Overlay */}
       <div className="chess-login-overlay" />
 
       {/* Main Container */}
@@ -61,14 +81,44 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         
         {/* Left Section: Branding & Highlights */}
         <div className="chess-left-brand">
-          {/* Logo */}
-          <div className="chess-brand-logo">
-            <svg className="chess-knight-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 22H5v-2h14v2zm-2-4H7v-1.5c0-1.1.9-2 2-2h6c1.1 0 2 .9 2 2V18zm-7.5-5.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm6 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-3-4c-.83 0-1.5-.67-1.5-1.5S11.67 5 12.5 5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-            </svg>
+          
+          {/* Logo Matching Reference Screenshot */}
+          <div className="chess-brand-logo-card">
+            <div className="chess-knight-svg-wrapper">
+              <svg width="68" height="78" viewBox="0 0 100 115" fill="none">
+                <defs>
+                  <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#f7e096" />
+                    <stop offset="45%" stopColor="#d4a63b" />
+                    <stop offset="100%" stopColor="#8c681c" />
+                  </linearGradient>
+                </defs>
+                {/* Pedestal */}
+                <rect x="12" y="100" width="76" height="8" rx="4" fill="url(#goldGrad)" />
+                <rect x="22" y="93" width="56" height="6" rx="2" fill="url(#goldGrad)" />
+                {/* Knight Body */}
+                <path 
+                  d="M 30 92 
+                     C 30 78, 22 68, 25 54 
+                     C 27 44, 34 36, 42 22 
+                     C 45 16, 48 10, 52 6 
+                     C 55 10, 60 16, 68 18 
+                     C 76 20, 82 28, 80 38 
+                     C 78 48, 70 56, 75 68 
+                     C 78 74, 82 82, 70 92 
+                     Z" 
+                  fill="url(#goldGrad)" 
+                />
+                {/* Snout & Jaw Detail */}
+                <path d="M 32 40 C 22 45, 18 58, 28 66 C 36 72, 42 78, 48 88 Z" fill="url(#goldGrad)" />
+                {/* Eye cutout */}
+                <circle cx="48" cy="32" r="3.5" fill="#12131a" />
+              </svg>
+            </div>
+
             <div className="chess-logo-text-wrap">
-              <span className="chess-logo-main">UPSTEP</span>
-              <span className="chess-logo-sub">CHESS ACADEMY</span>
+              <span className="chess-logo-main">CHESS</span>
+              <span className="chess-logo-sub">— ACADEMY —</span>
             </div>
           </div>
 
@@ -245,22 +295,23 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                 </button>
               </div>
 
-              {/* Footer */}
-              <div className="chess-card-footer">
-                <span>New here? </span>
-                <a 
-                  href="#create" 
-                  onClick={(e) => { e.preventDefault(); alert("Admin can create new user credentials inside Admin Portal -> User Management!"); }}
-                  className="chess-create-link"
-                >
-                  Create an account
-                </a>
-              </div>
-
             </form>
           </div>
         </div>
 
+      </div>
+
+      {/* Background Switcher Dots in Bottom-Left */}
+      <div className="chess-bg-switcher">
+        {BG_IMAGES.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            className={`chess-bg-dot ${activeBgIndex === idx ? 'active' : ''}`}
+            onClick={() => setActiveBgIndex(idx)}
+            title={`Switch Background Image ${idx + 1}`}
+          />
+        ))}
       </div>
     </div>
   );

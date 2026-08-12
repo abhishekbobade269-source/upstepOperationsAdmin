@@ -1267,6 +1267,40 @@ input:focus, select:focus, textarea:focus,
   font-weight: 700;
 }
 
+/* Background Switcher Dots in Bottom-Left */
+.chess-bg-switcher {
+  position: absolute;
+  bottom: 2rem;
+  left: 3rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.chess-bg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.22s ease;
+}
+
+.chess-bg-dot:hover {
+  background: rgba(196, 154, 55, 0.6);
+  transform: scale(1.2);
+}
+
+.chess-bg-dot.active {
+  background: #c49a37;
+  border-color: #f7e096;
+  transform: scale(1.3);
+  box-shadow: 0 0 10px rgba(196, 154, 55, 0.6);
+}
+
 /* Switch to calendar / back to grid button (in toolbar) */
 .btn-switch-view {
   display: inline-flex;
@@ -2076,51 +2110,25 @@ body.light-mode .page-loader-overlay {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.65) contrast(1.1);
+  filter: brightness(0.68) contrast(1.1);
   z-index: 1;
+  opacity: 0;
+  transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.chess-login-overlay {
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 65% 50%, rgba(20, 21, 28, 0.4), rgba(11, 12, 16, 0.92) 80%),
-    linear-gradient(180deg, rgba(11, 12, 16, 0.65) 0%, rgba(11, 12, 16, 0.88) 100%);
-  z-index: 2;
+.chess-login-bg.active {
+  opacity: 1;
 }
 
-.chess-login-container {
-  position: relative;
-  z-index: 3;
-  width: 100%;
-  max-width: 1180px;
-  min-height: 580px;
-  padding: 2.5rem 3rem;
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  align-items: center;
-  gap: 3rem;
-}
-
-/* Left Section */
-.chess-left-brand {
+.chess-brand-logo-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-  gap: 2.5rem;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
-.chess-brand-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.chess-knight-icon {
-  width: 38px;
-  height: 38px;
-  color: #c49a37;
+.chess-knight-svg-wrapper {
+  filter: drop-shadow(0 6px 12px rgba(196, 154, 55, 0.35));
 }
 
 .chess-logo-text-wrap {
@@ -2130,19 +2138,19 @@ body.light-mode .page-loader-overlay {
 
 .chess-logo-main {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.55rem;
+  font-size: 2.1rem;
   font-weight: 900;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.18em;
   color: #ffffff;
   line-height: 1;
 }
 
 .chess-logo-sub {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.35em;
+  letter-spacing: 0.38em;
   color: #c49a37;
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
 }
 
 .chess-brand-body {
