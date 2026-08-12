@@ -1558,6 +1558,84 @@ body.light-mode .btn-switch-view { background: rgba(245,158,11,0.08); color: #d9
     padding: 0.75rem;
   }
 
+  /* Mobile Master Grid Adaptations */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+    border-radius: 10px !important;
+  }
+
+  .master-grid-table {
+    table-layout: auto !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Hide secondary desktop columns on mobile screens to free up screen real estate */
+  .master-grid-table .first-col,
+  .master-grid-table .second-col,
+  .master-grid-table .third-col,
+  .master-grid-table .fifth-col {
+    display: none !important;
+  }
+
+  /* Make ONLY the Coach Name column sticky at left: 0 on mobile */
+  .master-grid-table .fourth-col {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 8 !important;
+    width: 110px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
+    background: var(--bg-card) !important;
+    border-right: 2px solid var(--accent-blue) !important;
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.4) !important;
+    padding: 0.4rem 0.35rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Make Start T / End T time columns compact */
+  .master-grid-table .col-time {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    font-size: 0.68rem !important;
+    padding: 0.25rem 0.2rem !important;
+  }
+
+  /* Make Day columns and slot cells touch friendly & compact */
+  .master-grid-table .col-day {
+    width: 95px !important;
+    min-width: 95px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .slot-cell {
+    min-width: 90px !important;
+    height: 38px !important;
+    padding: 0.15rem !important;
+  }
+
+  .slot-cell-content {
+    font-size: 0.68rem !important;
+  }
+
+  /* Calendar Grid Mobile Sticky overrides */
+  .cal-th-sticky-left2,
+  .cal-td-sticky-left2 {
+    left: 70px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+    width: 65px !important;
+  }
+
+  .cal-th-sticky-left,
+  .cal-td-sticky-left {
+    min-width: 70px !important;
+    max-width: 70px !important;
+    width: 70px !important;
+  }
+
   /* Grid Views */
   .grid-header-toolbar {
     flex-direction: column;
