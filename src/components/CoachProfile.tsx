@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import type { Coach, Slot } from '../types';
+import type { Coach, Slot, Role } from '../types';
 import { User, Edit3, Calendar, AlertCircle, BookOpen, Clock, UserCheck, Save } from 'lucide-react';
 import './CoachProfile.css';
 
 interface CoachProfileProps {
   coaches: Coach[];
   slots: Slot[];
+  currentRole?: Role;
   onUpdateCoach: (updatedCoach: Coach) => void;
   onSelectSlot: (slot: Slot) => void;
   onOpenBookingModal: (coach: Coach, day: string, startTime: string, endTime: string) => void;
@@ -21,6 +22,7 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 export const CoachProfile: React.FC<CoachProfileProps> = ({
   coaches,
   slots,
+  currentRole = 'admin',
   onUpdateCoach,
   onSelectSlot,
   onOpenBookingModal,
@@ -241,17 +243,19 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
           </select>
         </div>
 
-        <button 
-          type="button" 
-          onClick={() => {
-            setIsEditing(!isEditing);
-            if (isEditing) setFormData(coach);
-          }}
-          className="btn-secondary"
-        >
-          <Edit3 className="icon-sm" />
-          {isEditing ? 'Cancel Editing' : 'Edit Profile Details'}
-        </button>
+        {currentRole === 'admin' && (
+          <button 
+            type="button" 
+            onClick={() => {
+              setIsEditing(!isEditing);
+              if (isEditing) setFormData(coach);
+            }}
+            className="btn-secondary"
+          >
+            <Edit3 className="icon-sm" />
+            {isEditing ? 'Cancel Editing' : 'Edit Profile Details'}
+          </button>
+        )}
       </div>
 
       <input 
@@ -756,14 +760,16 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
                 <option value="9:45 PM">9:45 PM</option>
               </select>
             </div>
-            <button 
-              type="button" 
-              onClick={() => onAddSlotsRow(coach.id, newRowStart, newRowEnd)} 
-              className="btn-primary" 
-              style={{ padding: '0.45rem 0.95rem', fontSize: '0.8rem', height: '32px' }}
-            >
-              ➕ Add Row
-            </button>
+            {currentRole === 'admin' && (
+              <button 
+                type="button" 
+                onClick={() => onAddSlotsRow(coach.id, newRowStart, newRowEnd)} 
+                className="btn-primary" 
+                style={{ padding: '0.45rem 0.95rem', fontSize: '0.8rem', height: '32px' }}
+              >
+                ➕ Add Row
+              </button>
+            )}
           </div>
         </div>
 
@@ -791,14 +797,16 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
                     <td className="col-time font-mono" style={{ width: '130px', minWidth: '130px', maxWidth: '130px', fontWeight: 'bold', background: 'var(--bg-secondary)', color: 'var(--text-main)', borderRight: '1px solid var(--border-color)', textAlign: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                         <span>{timeSpan.start} - {timeSpan.end}</span>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteSlotsRow(coach.id, timeSpan.start)}
-                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}
-                          title="Remove Time Slot Row"
-                        >
-                          🗑️
-                        </button>
+                        {currentRole === 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteSlotsRow(coach.id, timeSpan.start)}
+                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}
+                            title="Remove Time Slot Row"
+                          >
+                            🗑️
+                          </button>
+                        )}
                       </div>
                     </td>
                     {DAYS_OF_WEEK.map(day => {

@@ -14,11 +14,14 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import type { Role } from '../types';
+import type { Role, AuthUser } from '../types';
+import { LogOut } from 'lucide-react';
 
 interface HeaderProps {
   currentRole: Role;
   setCurrentRole: (role: Role) => void;
+  currentUser?: AuthUser | null;
+  onLogout?: () => void;
   activePortal: 'management' | 'admin';
   setActivePortal: (portal: 'management' | 'admin') => void;
   activeTab: string;
@@ -37,6 +40,8 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentRole,
   setCurrentRole,
+  currentUser,
+  onLogout,
   activePortal,
   setActivePortal,
   activeTab,
@@ -101,6 +106,16 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Controls */}
           <div className="header-controls">
+            {/* User Badge */}
+            {currentUser && (
+              <div className="user-badge-pill" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', padding: '0.35rem 0.75rem', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
+                <User size={14} color={currentRole === 'admin' ? '#f59e0b' : currentRole === 'manager' ? '#3b82f6' : '#10b981'} />
+                <span>
+                  <strong>{currentUser.name}</strong> ({currentUser.roleTitle})
+                </span>
+              </div>
+            )}
+
             {/* Role selector */}
             <div className="role-selector">
               <label>Role:</label>
@@ -111,6 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <option value="admin">System Admin</option>
                 <option value="manager">Ops Manager</option>
+                <option value="salesperson">Salesperson</option>
                 <option value="rm">Relationship Manager</option>
               </select>
             </div>
@@ -126,11 +142,11 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Reset Database Button */}
-            {onResetDatabase && (
+            {onResetDatabase && currentRole === 'admin' && (
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm("Are you sure you want to reset the scheduler database back to the default initial mock data? This deletes all your custom shifts, edits, and bookings.")) {
+                  if (confirm("Are you sure you want to reset the scheduler database back to baseline mock data?")) {
                     onResetDatabase();
                   }
                 }}
@@ -139,6 +155,19 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Reset Database to Baseline"
               >
                 🔄
+              </button>
+            )}
+
+            {/* Logout Button */}
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="icon-button"
+                style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' }}
+                title="Log Out of System"
+              >
+                <LogOut size={16} />
               </button>
             )}
           </div>
@@ -152,28 +181,51 @@ export const Header: React.FC<HeaderProps> = ({
               className={`portal-btn ${activePortal === 'management' ? 'active' : ''}`}
               onClick={() => {
                 setActivePortal('management');
-                setActiveTab('grid');
+                setActiveTab(currentRole === 'salesperson' ? 'sameday_demo_tracker' : 'grid');
               }}
             >
               <Briefcase className="icon-sm" />
-              Management Portal
+              {currentRole === 'salesperson' ? 'Sales Portal' : 'Management Portal'}
             </button>
-            <button
-              type="button"
-              className={`portal-btn ${activePortal === 'admin' ? 'active' : ''}`}
-              onClick={() => {
-                setActivePortal('admin');
-                setActiveTab('shifts');
-              }}
-            >
-              <ShieldCheck className="icon-sm" />
-              Admin Portal
-            </button>
+
+            {currentRole !== 'salesperson' && (
+              <button
+                type="button"
+                className={`portal-btn ${activePortal === 'admin' ? 'active' : ''}`}
+                onClick={() => {
+                  setActivePortal('admin');
+                  setActiveTab('shifts');
+                }}
+              >
+                <ShieldCheck className="icon-sm" />
+                Admin Portal
+              </button>
+            )}
           </div>
 
           {/* Sub Navigation */}
           <nav className="sub-nav">
-            {activePortal === 'management' ? (
+            {currentRole === 'salesperson' ? (
+              /* Salesperson view — ONLY Same Day Demo & Demo Slots */
+              <>
+                <button
+                  type="button"
+                  className={`sub-nav-btn ${activeTab === 'sameday_demo_tracker' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('sameday_demo_tracker')}
+                >
+                  <AlertTriangle className="icon-sm text-amber" />
+                  ⚡ Same-Day Demo Tracker & Requests
+                </button>
+                <button
+                  type="button"
+                  className={`sub-nav-btn ${activeTab === 'daily_demo_slots' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('daily_demo_slots')}
+                >
+                  <Clock className="icon-sm text-gold" />
+                  🔁 Daily Demo Slots 2.0
+                </button>
+              </>
+            ) : activePortal === 'management' ? (
               <>
                 <button
                   type="button"

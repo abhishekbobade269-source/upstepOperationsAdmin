@@ -1,4 +1,11 @@
-export type Role = 'admin' | 'manager' | 'rm';
+export type Role = 'admin' | 'manager' | 'salesperson' | 'rm';
+
+export interface AuthUser {
+  username: string;
+  name: string;
+  role: Role;
+  roleTitle: string;
+}
 
 export type SlotStatusType = 
   | 'AVAILABLE'                    // Free Slot (X)

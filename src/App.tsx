@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Role, Coach, Slot, ShiftTemplate, SlotStatusType, AuditRuleConfig, DateSlotOverride } from './types';
+import type { Role, Coach, Slot, ShiftTemplate, SlotStatusType, AuditRuleConfig, DateSlotOverride, AuthUser } from './types';
 import { INITIAL_COACHES, INITIAL_SHIFTS, INITIAL_SLOTS } from './mockData';
 import { isTemporaryOrDemo, addMinutesToTime } from './utils/shiftUtils';
 import { detectScheduleConflicts, DEFAULT_RULE_CONFIG } from './utils/conflictDetector';
@@ -16,19 +16,86 @@ import { DailyDemoSlotsHub } from './components/DailyDemoSlotsHub';
 import { SameDayDemoTracker } from './components/SameDayDemoTracker';
 import { CalendarScheduleGrid } from './components/CalendarScheduleGrid';
 import { SlotBookingModal } from './components/SlotBookingModal';
+import { LoginPage } from './components/LoginPage';
+import { PageLoader } from './components/PageLoader';
 import './index.css';
 
 export function App() {
-  // State
-  const [currentRole, setCurrentRole] = useState<Role>('manager');
-  const [activePortal, setActivePortal] = useState<'management' | 'admin'>(() => {
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    const saved = localStorage.getItem('upstep_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [currentRole, setCurrentRole] = useState<Role>(() => {
+    return currentUser?.role || 'admin';
+  });
+
+  const [activePortal, setActivePortalState] = useState<'management' | 'admin'>(() => {
     const saved = localStorage.getItem('upstep_active_portal');
     return (saved as 'management' | 'admin') || 'management';
   });
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    return localStorage.getItem('upstep_active_tab') || 'grid';
+
+  const [activeTab, setActiveTabState] = useState<string>(() => {
+    const saved = localStorage.getItem('upstep_active_tab');
+    if (currentUser?.role === 'salesperson') return 'sameday_demo_tracker';
+    return saved || 'grid';
   });
+
   const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [isPageLoading, setIsPageLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('Loading workspace...');
+
+  // Sync role when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setCurrentRole(currentUser.role);
+      localStorage.setItem('upstep_current_user', JSON.stringify(currentUser));
+      if (currentUser.role === 'salesperson') {
+        setActiveTabState('sameday_demo_tracker');
+        setActivePortalState('management');
+      }
+    } else {
+      localStorage.removeItem('upstep_current_user');
+    }
+  }, [currentUser]);
+
+  // Wrapped tab change with smooth page transition loader
+  const setActiveTab = (tab: string) => {
+    setLoadingMessage('Switching view...');
+    setIsPageLoading(true);
+    setActiveTabState(tab);
+    localStorage.setItem('upstep_active_tab', tab);
+    setTimeout(() => setIsPageLoading(false), 220);
+  };
+
+  const setActivePortal = (portal: 'management' | 'admin') => {
+    setLoadingMessage('Switching portal...');
+    setIsPageLoading(true);
+    setActivePortalState(portal);
+    localStorage.setItem('upstep_active_portal', portal);
+    setTimeout(() => setIsPageLoading(false), 220);
+  };
+
+  const handleLogin = (user: AuthUser) => {
+    setLoadingMessage(`Signing in as ${user.roleTitle}...`);
+    setIsPageLoading(true);
+    setCurrentUser(user);
+    setCurrentRole(user.role);
+    if (user.role === 'salesperson') {
+      setActiveTabState('sameday_demo_tracker');
+    }
+    setTimeout(() => setIsPageLoading(false), 500);
+  };
+
+  const handleLogout = () => {
+    setLoadingMessage('Logging out...');
+    setIsPageLoading(true);
+    setTimeout(() => {
+      setCurrentUser(null);
+      setIsPageLoading(false);
+    }, 400);
+  };
 
   // Application Data States (Loaded from localStorage or defaults)
   const [coaches, setCoaches] = useState<Coach[]>(() => {
@@ -410,12 +477,34 @@ export function App() {
     }
   };
 
+  // If user is not logged in, render the attractive LoginPage
+  if (!currentUser) {
+    return (
+      <>
+        {isPageLoading && <PageLoader message={loadingMessage} />}
+        <LoginPage onLogin={handleLogin} />
+      </>
+    );
+  }
+
   return (
     <div className="app-root">
+      {isPageLoading && <PageLoader message={loadingMessage} />}
+
       {/* Header */}
       <Header
         currentRole={currentRole}
-        setCurrentRole={setCurrentRole}
+        setCurrentRole={(r) => {
+          setCurrentRole(r);
+          if (currentUser) {
+            let roleTitle = 'System Admin';
+            if (r === 'manager') roleTitle = 'Ops Manager';
+            if (r === 'salesperson') roleTitle = 'Sales Executive';
+            setCurrentUser({ ...currentUser, role: r, roleTitle });
+          }
+        }}
+        currentUser={currentUser}
+        onLogout={handleLogout}
         activePortal={activePortal}
         setActivePortal={setActivePortal}
         activeTab={activeTab}
@@ -497,6 +586,7 @@ export function App() {
           <CoachProfile
             coaches={coaches}
             slots={slots}
+            currentRole={currentRole}
             onUpdateCoach={handleUpdateCoach}
             onSelectSlot={handleSelectSlotCell}
             onOpenBookingModal={handleOpenBookingForCoach}
