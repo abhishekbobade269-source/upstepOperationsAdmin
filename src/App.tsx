@@ -228,6 +228,8 @@ export function App() {
     status_type: SlotStatusType;
     activity: string;
     applyToMultipleDays?: string[];
+    start_date?: string;
+    end_date?: string;
   }) => {
     const targetDays = data.applyToMultipleDays || [selectedSlot?.day_of_week || 'Monday'];
     const targetCoachId = selectedSlot ? selectedSlot.coach_id : targetBookingInfo?.coachId;
@@ -249,11 +251,13 @@ export function App() {
         );
 
         if (existingIdx >= 0) {
-          // Update existing slot
+          // Update existing slot — preserve start_date/end_date if provided
           updated[existingIdx] = {
             ...updated[existingIdx],
             status_type: data.status_type,
-            activity: data.activity
+            activity: data.activity,
+            ...(data.start_date ? { start_date: data.start_date } : {}),
+            ...(data.end_date   ? { end_date:   data.end_date   } : {}),
           };
         } else if (targetCoach) {
           // Create new slot
@@ -271,7 +275,9 @@ export function App() {
             start_time: startTime,
             end_time: endTime,
             status_type: data.status_type,
-            activity: data.activity
+            activity: data.activity,
+            start_date: data.start_date,
+            end_date: data.end_date,
           };
           updated.push(newSlot);
         }

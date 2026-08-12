@@ -1313,6 +1313,233 @@ body.light-mode .cal-coach-card { background: rgba(59,130,246,0.05); border-colo
 body.light-mode .btn-switch-view { background: rgba(245,158,11,0.08); color: #d97706; border-color: #f59e0b; }
 
 /* ==========================================
+   CALENDAR GRID — SLIDE-OPEN SUB-SLOT ANIMATION
+   ========================================== */
+
+/* The wrapper <div> INSIDE a sub-slot <td> that animates max-width */
+.cal-subslot-slide {
+  overflow: hidden;
+  max-width: 0;
+  min-width: 0;
+  opacity: 0;
+  transition:
+    max-width 0.33s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity   0.25s ease,
+    padding   0.28s ease;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+.cal-subslot-slide.open {
+  max-width: 140px;
+  min-width: 105px;
+  opacity: 1;
+}
+
+/* Sub-slot <td> containers — zero padding/border until inner div opens */
+.cal-td-sub {
+  padding: 0 !important;
+  border: none !important;
+  vertical-align: middle;
+  background: transparent;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.cal-td-sub.sub-open {
+  padding: 0.4rem 0.3rem !important;
+  border: 1px solid var(--border-color) !important;
+  border-left: none !important;
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* Sub-slot header cells */
+.cal-th-sub {
+  padding: 0 !important;
+  border: none !important;
+  overflow: hidden;
+  transition: padding 0.3s ease, border-color 0.3s ease;
+}
+.cal-th-sub.sub-open {
+  padding: 0.35rem 0.3rem !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border-left: none !important;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  text-align: center;
+  white-space: nowrap;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* 5-Min Rest Break sub-slot */
+.cal-break-cell {
+  background: rgba(139, 0, 255, 0.12) !important;
+  border-top: 1px solid rgba(139, 0, 255, 0.25) !important;
+  border-bottom: 1px solid rgba(139, 0, 255, 0.25) !important;
+  pointer-events: none !important;
+}
+.cal-break-cell .cal-subslot-slide.open {
+  justify-content: center;
+}
+.cal-break-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #c084fc;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+/* Free Slot pill inside sub-slot */
+.cal-free-slot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+  white-space: nowrap;
+}
+
+/* Demo/booked pill */
+.cal-booked-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Time range label in sub-slot */
+.cal-sub-time-label {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+  letter-spacing: 0.02em;
+}
+
+/* Expired slot badge */
+.cal-expired-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: rgba(100, 116, 139, 0.18);
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+/* Demo Preference dot badge */
+.cal-demo-pref-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+/* Slot date-range indicator (shown in cell footer when end_date is set) */
+.cal-slot-expiry-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  color: #f59e0b;
+  border-top: 1px solid rgba(245, 158, 11, 0.25);
+  padding-top: 0.15rem;
+  margin-top: 0.2rem;
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Light mode overrides */
+body.light-mode .cal-td-sub.sub-open { background: rgba(59,130,246,0.03); border-color: #e2e8f0 !important; }
+body.light-mode .cal-th-sub.sub-open { background: rgba(59,130,246,0.06); border-color: #bfdbfe !important; color: #1d4ed8; }
+body.light-mode .cal-break-cell { background: rgba(139,0,255,0.06) !important; }
+body.light-mode .cal-break-label { color: #7c3aed; }
+body.light-mode .cal-free-slot-pill { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); color: #059669; }
+body.light-mode .cal-sub-time-label { color: #64748b; }
+body.light-mode .cal-expired-badge { background: rgba(100,116,139,0.1); color: #64748b; }
+body.light-mode .cal-slot-expiry-tag { color: #d97706; }
+
+/* ==========================================
+   SLOT BOOKING MODAL — DATE RANGE SECTION
+   ========================================== */
+
+.booking-date-range-section {
+  background: rgba(245, 158, 11, 0.07);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-top: 1rem;
+}
+.booking-date-range-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f59e0b;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.02em;
+}
+.booking-date-range-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.booking-date-input-wrap label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+.booking-date-input-wrap input[type="date"] {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.booking-date-input-wrap input[type="date"]:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.booking-date-range-info {
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  margin-top: 0.55rem;
+  line-height: 1.5;
+}
+body.light-mode .booking-date-range-section { background: rgba(245,158,11,0.04); border-color: rgba(245,158,11,0.2); }
+body.light-mode .booking-date-input-wrap input[type="date"] { background: #fff; border-color: #e2e8f0; }
+
+/* ==========================================
    MOBILE APP RESPONSIVE & TOUCH STYLES
    ========================================== */
 

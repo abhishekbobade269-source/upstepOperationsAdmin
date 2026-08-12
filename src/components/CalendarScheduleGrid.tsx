@@ -1,13 +1,13 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { Slot, Coach, DateSlotOverride } from '../types';
 import { Search, Calendar, ChevronLeft, ChevronRight, ShieldCheck, X, User, RotateCcw } from 'lucide-react';
 import {
   timeToMinutes,
   formatDateIso,
   formatDateDisplay,
-  resolveSlotStatusForDate,
-  addMinutesToTime
+  resolveSlotStatusForDate
 } from '../utils/shiftUtils';
+import { isEligibleDemoMasterSlot, splitMasterSlotIntoSubSlots } from '../utils/demoSlotsUtils';
 
 interface CalendarScheduleGridProps {
   coaches: Coach[];
@@ -90,6 +90,16 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
       return matchesSearch && matchesRM;
     });
   }, [coaches, searchCoachQuery, selectedRmFilter]);
+
+  // BUG FIX: Auto-select first match when current coach is filtered out
+  useEffect(() => {
+    if (
+      filteredCoachOptions.length > 0 &&
+      !filteredCoachOptions.some(c => c.id === selectedCoachId)
+    ) {
+      setSelectedCoachId(filteredCoachOptions[0].id);
+    }
+  }, [filteredCoachOptions, selectedCoachId]);
 
   // Selected coach object
   const selectedCoach = useMemo(() => {
@@ -174,19 +184,12 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
   }, []);
 
   // Check whether a resolved slot should show 20-min sub-slots when expanded
-  const isSubSlotEligible = useCallback((resolved?: ReturnType<typeof resolveSlotStatusForDate>): boolean => {
-    if (!resolved) return false;
-    const act = (resolved.activity || '').toUpperCase().trim();
-    const st = resolved.status_type;
-    return (
-      act.startsWith('X') ||
-      st === 'AVAILABLE' ||
-      st === 'DEMO_CLASS' ||
-      st === 'BATCH_LEVEL_BREAK' ||
-      st === 'INACTIVE' ||
-      st === 'REQUIREMENT_BLOCK' ||
-      st === 'NEXT_MONTH_BLOCK'
-    );
+  // Uses isEligibleDemoMasterSlot from demoSlotsUtils — single source of truth
+  const isSubSlotEligible = useCallback((resolved?: ReturnType<typeof resolveSlotStatusForDate>, masterSlot?: Slot): boolean => {
+    if (!resolved || !masterSlot) return false;
+    // Build a fake slot object with the resolved state so isEligibleDemoMasterSlot can check it
+    const slotProxy = { ...masterSlot, status_type: resolved.status_type, activity: resolved.activity };
+    return isEligibleDemoMasterSlot(slotProxy as Slot);
   }, []);
 
   // Toggle header-click date column expansion (immutable Set update)
@@ -333,7 +336,16 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div className="cal-coach-avatar">{selectedCoach.display_name.charAt(0)}</div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-main)' }}>{selectedCoach.display_name}</div>
+                <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  {selectedCoach.display_name}
+                  {selectedCoach.demo_preference_color && (
+                    <span
+                      className="cal-demo-pref-dot"
+                      style={{ background: selectedCoach.demo_preference_color, color: selectedCoach.demo_preference_color }}
+                      title={`Demo: ${selectedCoach.demo_preference}`}
+                    />
+                  )}
+                </div>
                 <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
                   SF: {selectedCoach.sf_coach_name} &nbsp;|&nbsp; {selectedCoach.employee_id || 'EMP-N/A'}
                 </div>
@@ -344,6 +356,7 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
               <span><span style={{ color: 'var(--text-muted)' }}>Shift:</span> <strong style={{ color: selectedCoach.shift_days === 2 ? '#a855f7' : '#eab308' }}>{selectedCoach.shift_type}</strong></span>
               <span><span style={{ color: 'var(--text-muted)' }}>FIDE:</span> <strong>{selectedCoach.standard_rating}</strong></span>
               <span><span style={{ color: 'var(--text-muted)' }}>Tier:</span> <span className="badge-pill blue" style={{ fontSize: '0.72rem' }}>{selectedCoach.tier}</span></span>
+              {selectedCoach.demo_preference && <span><span style={{ color: 'var(--text-muted)' }}>Demo:</span> <strong style={{ color: selectedCoach.demo_preference_color || '#10b981' }}>{selectedCoach.demo_preference}</strong></span>}
             </div>
           </div>
         )}
@@ -419,19 +432,36 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
                   const isExpanded = expandedDatesSet.has(dateIso);
 
                   return isExpanded ? (
-                    // Two sub-column headers when expanded
+                    // Main date header + 3 animated sub-column headers (slide open to the right)
                     <React.Fragment key={dateIso}>
+                      {/* Compressed main date header */}
                       <th
                         className={`cal-th cal-expanded-header${isToday ? ' cal-today-header' : ''}`}
-                        colSpan={2}
                         onClick={e => handleToggleDateExpansion(dateIso, e)}
-                        title="Click to collapse"
+                        title="Click to collapse sub-slots"
+                        style={{ minWidth: '90px', width: '90px' }}
                       >
-                        <div style={{ fontWeight: 800, fontSize: '0.84rem' }}>
-                          {formatDateDisplay(d)} ▼
+                        <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{formatDateDisplay(d)} ▼</div>
+                        {isToday && <span style={{ fontSize: '0.63rem', fontWeight: 700 }}>● TODAY</span>}
+                        <span className="cal-expand-hint">click to collapse</span>
+                      </th>
+                      {/* 1st 20 Min animated header */}
+                      <th className={`cal-th-sub sub-open`} style={{ position: 'relative' }}>
+                        <div className="cal-subslot-slide open" style={{ padding: '0.35rem 0.3rem', flexDirection: 'column', alignItems: 'center' }}>
+                          <span>⚡ 1st 20 Min</span>
                         </div>
-                        {isToday && <span style={{ fontSize: '0.65rem', fontWeight: 700 }}>● TODAY</span>}
-                        <span className="cal-expand-hint">Click to collapse</span>
+                      </th>
+                      {/* 5 Min Break animated header */}
+                      <th className="cal-th-sub sub-open cal-break-cell">
+                        <div className="cal-subslot-slide open" style={{ padding: '0.35rem 0.3rem', flexDirection: 'column', alignItems: 'center' }}>
+                          <span className="cal-break-label">🟣 5 Min Break</span>
+                        </div>
+                      </th>
+                      {/* 2nd 20 Min animated header */}
+                      <th className={`cal-th-sub sub-open`}>
+                        <div className="cal-subslot-slide open" style={{ padding: '0.35rem 0.3rem', flexDirection: 'column', alignItems: 'center' }}>
+                          <span>⚡ 2nd 20 Min</span>
+                        </div>
                       </th>
                     </React.Fragment>
                   ) : (
@@ -448,27 +478,6 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
                   );
                 })}
               </tr>
-
-              {/* Second sub-header row — only if any date is expanded */}
-              {expandedDatesSet.size > 0 && (
-                <tr>
-                  <th className="cal-th-sticky-left" style={{ padding: '0.25rem 0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', background: 'var(--bg-card)', fontWeight: 600 }}>—</th>
-                  <th className="cal-th-sticky-left2" style={{ padding: '0.25rem 0.4rem', fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'center', background: 'var(--bg-card)', fontWeight: 600 }}>—</th>
-                  {calendarDatesLoop.map(d => {
-                    const dateIso = formatDateIso(d);
-                    const isExpanded = expandedDatesSet.has(dateIso);
-                    if (isExpanded) {
-                      return (
-                        <React.Fragment key={dateIso}>
-                          <th className="cal-th-subslot">🟢 1st 20 Min</th>
-                          <th className="cal-th-subslot">🟢 2nd 20 Min</th>
-                        </React.Fragment>
-                      );
-                    }
-                    return <th key={dateIso} className="cal-th" style={{ cursor: 'default', fontSize: '0.7rem', color: 'var(--text-muted)', padding: '0.25rem' }}>—</th>;
-                  })}
-                </tr>
-              )}
             </thead>
 
             <tbody>
@@ -490,7 +499,7 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
                       {timeSpan.end_time}
                     </td>
 
-                    {/* Date cells (or sub-slot cells when expanded) */}
+                    {/* Date cells (or 3 sub-slot cells when expanded) */}
                     {calendarDatesLoop.map(colDate => {
                       const dateIso = formatDateIso(colDate);
                       const dateDisplay = formatDateDisplay(colDate);
@@ -498,68 +507,91 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
                       const masterSlot = getSlot(timeSpan.start_time, dayOfWeek);
                       const resolved = masterSlot ? resolveSlotStatusForDate(masterSlot, dateIso, dateOverrides) : undefined;
                       const isExpanded = expandedDatesSet.has(dateIso);
-                      const eligible = isSubSlotEligible(resolved);
+                      const eligible = masterSlot ? isSubSlotEligible(resolved, masterSlot) : false;
+
+                      // Is this slot expired (past end_date)?
+                      const isExpired = resolved?.activity === 'X (Expired)';
 
                       const cellContent = (
                         <div className="cal-cell-inner">
-                          <span style={{ fontWeight: 700 }}>{resolved ? resolved.activity : '—'}</span>
-                          {resolved?.is_override && (
+                          {isExpired ? (
+                            <span className="cal-expired-badge">⬜ Expired</span>
+                          ) : (
+                            <span style={{ fontWeight: 700 }}>{resolved ? resolved.activity : '—'}</span>
+                          )}
+                          {resolved?.is_override && !isExpired && (
                             <span className="cal-override-badge">
                               ⚡ {resolved.substitute_coach_name ? `Sub: ${resolved.substitute_coach_name}` : 'Override'}
                             </span>
+                          )}
+                          {masterSlot?.end_date && !isExpired && masterSlot.status_type === 'SCHEDULED_CLASS' && (
+                            <span className="cal-slot-expiry-tag">until {masterSlot.end_date}</span>
                           )}
                         </div>
                       );
 
                       if (isExpanded) {
-                        // ── Expanded: render two sub-slot cells ──
-                        const sub1Time = addMinutesToTime(timeSpan.start_time, 20);
-                        const sub2Time = addMinutesToTime(timeSpan.start_time, 25);
+                        // ── Expanded: render MAIN cell + 3 animated sub-slot cells ──
+                        const { sub1, restBreakTime, sub2 } = splitMasterSlotIntoSubSlots(timeSpan.start_time);
+                        const [breakStart, breakEnd] = restBreakTime.split(' - ');
+                        const isBreak = resolved?.status_type === 'BATCH_LEVEL_BREAK' || resolved?.status_type === 'INACTIVE';
 
-                        const sub1 = resolved?.sub_slot_1;
-                        const sub2 = resolved?.sub_slot_2;
+                        const renderSubContent = (isFirst: boolean) => {
+                          if (!eligible) return <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>—</span>;
+                          if (isBreak) return <span className="cal-break-label">🟣 Level Break</span>;
+                          const subSlotData = isFirst ? resolved?.sub_slot_1 : resolved?.sub_slot_2;
+                          if (subSlotData?.status === 'BOOKED') {
+                            return <span className="cal-booked-pill">{(subSlotData as any).student_name || 'Booked'}</span>;
+                          }
+                          return <span className="cal-free-slot-pill">⚡ Free Slot</span>;
+                        };
 
                         return (
                           <React.Fragment key={dateIso}>
-                            {/* 1st 20 Min cell */}
+                            {/* Main compressed cell */}
                             <td
-                              className={`cal-td-subslot ${getSlotCellClass(resolved)}`}
+                              className={`cal-td ${getSlotCellClass(resolved)}`}
                               onClick={() => {
                                 if (masterSlot && resolved) handleOpenAllocationModal(selectedCoach, masterSlot, dateIso, dateDisplay, resolved);
                               }}
-                              style={{ cursor: masterSlot ? 'pointer' : 'default' }}
-                              title={`${timeSpan.start_time} – ${sub1Time}`}
+                              style={{ cursor: masterSlot ? 'pointer' : 'default', minWidth: '90px', width: '90px' }}
+                              title={masterSlot ? `${dateDisplay} | ${resolved?.activity}` : 'No slot'}
                             >
-                              {eligible ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
-                                  <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{timeSpan.start_time} – {sub1Time}</span>
-                                  <span className={`cal-subslot-label ${sub1?.status === 'BOOKED' ? 'booked' : resolved?.status_type === 'BATCH_LEVEL_BREAK' || resolved?.status_type === 'INACTIVE' ? 'break' : 'free'}`}>
-                                    {sub1?.status === 'BOOKED' ? `👤 ${sub1.student_name}` : resolved?.status_type === 'BATCH_LEVEL_BREAK' || resolved?.status_type === 'INACTIVE' ? '🟣 Break' : '⚡ Free Slot'}
-                                  </span>
-                                </div>
-                              ) : (
-                                cellContent
-                              )}
+                              {cellContent}
                             </td>
-                            {/* 2nd 20 Min cell */}
-                            <td
-                              className={`cal-td-subslot ${getSlotCellClass(resolved)}`}
+
+                            {/* 1st 20 Min cell — slides open */}
+                            <td className={`cal-td-sub sub-open ${eligible ? getSlotCellClass(resolved) : ''}`}
                               onClick={() => {
-                                if (masterSlot && resolved) handleOpenAllocationModal(selectedCoach, masterSlot, dateIso, dateDisplay, resolved);
+                                if (masterSlot && resolved && eligible) handleOpenAllocationModal(selectedCoach, masterSlot, dateIso, dateDisplay, resolved);
                               }}
-                              style={{ cursor: masterSlot ? 'pointer' : 'default' }}
-                              title={`${sub2Time} – ${timeSpan.end_time}`}
+                              style={{ cursor: eligible ? 'pointer' : 'default' }}
                             >
-                              {eligible ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.18rem' }}>
-                                  <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{sub2Time} – {timeSpan.end_time}</span>
-                                  <span className={`cal-subslot-label ${sub2?.status === 'BOOKED' ? 'booked' : resolved?.status_type === 'BATCH_LEVEL_BREAK' || resolved?.status_type === 'INACTIVE' ? 'break' : 'free'}`}>
-                                    {sub2?.status === 'BOOKED' ? `👤 ${sub2.student_name}` : resolved?.status_type === 'BATCH_LEVEL_BREAK' || resolved?.status_type === 'INACTIVE' ? '🟣 Break' : '⚡ Free Slot'}
-                                  </span>
-                                </div>
-                              ) : (
-                                cellContent
-                              )}
+                              <div className="cal-subslot-slide open">
+                                <span className="cal-sub-time-label">{sub1.start_time} – {sub1.end_time}</span>
+                                {renderSubContent(true)}
+                              </div>
+                            </td>
+
+                            {/* 5 Min Rest Break cell — fixed, non-interactive */}
+                            <td className="cal-td-sub sub-open cal-break-cell">
+                              <div className="cal-subslot-slide open">
+                                <span className="cal-sub-time-label">{breakStart} – {breakEnd}</span>
+                                <span className="cal-break-label">🟣 Rest</span>
+                              </div>
+                            </td>
+
+                            {/* 2nd 20 Min cell — slides open */}
+                            <td className={`cal-td-sub sub-open ${eligible ? getSlotCellClass(resolved) : ''}`}
+                              onClick={() => {
+                                if (masterSlot && resolved && eligible) handleOpenAllocationModal(selectedCoach, masterSlot, dateIso, dateDisplay, resolved);
+                              }}
+                              style={{ cursor: eligible ? 'pointer' : 'default' }}
+                            >
+                              <div className="cal-subslot-slide open">
+                                <span className="cal-sub-time-label">{sub2.start_time} – {sub2.end_time}</span>
+                                {renderSubContent(false)}
+                              </div>
                             </td>
                           </React.Fragment>
                         );

@@ -1,7 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import type { Slot, SlotStatusType, Coach } from '../types';
-import { X, Check, ShieldAlert, RefreshCw, Clock } from 'lucide-react';
+import { X, Check, ShieldAlert, RefreshCw, Clock, CalendarDays } from 'lucide-react';
 import { isActiveClassSlot, getSlotDurationMinutes } from '../utils/conflictDetector';
+
+// Helper to get a date string N months from today
+function monthsFromToday(n: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + n);
+  return d.toISOString().slice(0, 10);
+}
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 interface SlotBookingModalProps {
   isOpen: boolean;
@@ -15,6 +25,8 @@ interface SlotBookingModalProps {
     status_type: SlotStatusType;
     activity: string;
     applyToMultipleDays?: string[];
+    start_date?: string;
+    end_date?: string;
   }) => void;
   coaches: Coach[];
   slots: Slot[];
@@ -55,6 +67,23 @@ export const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
   );
   const [selectedDays, setSelectedDays] = useState<string[]>([day || 'Monday']);
   const [isReassignMode, setIsReassignMode] = useState(false);
+
+  // Date range state — for how long is this booking valid?
+  // Default: today → 3 months from today (covers a full quarter)
+  const [startDate, setStartDate] = useState<string>(() => slot?.start_date || todayIso());
+  const [endDate, setEndDate] = useState<string>(() => slot?.end_date || monthsFromToday(3));
+
+  // Types that benefit from a date range (permanent / substitutes / breaks)
+  const showDateRange = (
+    bookingType === 'SCHEDULED_CLASS' ||
+    bookingType === 'PERMANENT_SUBSTITUTE' ||
+    bookingType === 'LONG_LEAVE_SUBSTITUTE' ||
+    bookingType === 'BATCH_LEVEL_BREAK' ||
+    bookingType === 'INACTIVE' ||
+    bookingType === 'NOTICE_PERIOD' ||
+    bookingType === 'TRAINING' ||
+    bookingType === 'TEMPORARY_CLASS'
+  );
 
   const isRestBreak = currentStatus === 'REST_BREAK' || currentStatus === 'OFF_DUTY';
 
@@ -118,7 +147,9 @@ export const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
     onSaveSlot({
       status_type: bookingType,
       activity: finalActivity || 'Scheduled Class',
-      applyToMultipleDays: selectedDays
+      applyToMultipleDays: selectedDays,
+      start_date: showDateRange ? startDate : undefined,
+      end_date: showDateRange ? endDate : undefined,
     });
 
     onClose();
@@ -398,6 +429,46 @@ export const SlotBookingModal: React.FC<SlotBookingModalProps> = ({
                   className="text-input"
                   autoFocus
                 />
+              </div>
+            )}
+
+            {/* ── Date Range Section ── */}
+            {showDateRange && (
+              <div className="booking-date-range-section">
+                <div className="booking-date-range-title">
+                  <CalendarDays size={15} />
+                  Booking Period (Start Date → End Date)
+                </div>
+                <div className="booking-date-range-grid">
+                  <div className="booking-date-input-wrap">
+                    <label>📅 Start Date</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      min={todayIso()}
+                    />
+                  </div>
+                  <div className="booking-date-input-wrap">
+                    <label>🔚 End Date (Expiry)</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      min={startDate || todayIso()}
+                    />
+                  </div>
+                </div>
+                <p className="booking-date-range-info">
+                  ⚡ The schedule will show this booking on the Calendar Grid from <strong>{startDate}</strong> to <strong>{endDate}</strong>.
+                  After the end date, the slot automatically returns to <strong>"X" (Available)</strong> for new bookings.
+                  <br/>
+                  {bookingType === 'SCHEDULED_CLASS' && (
+                    <span style={{ color: '#f59e0b' }}>
+                      💡 Tip: For a permanent batch, set end date to the last class date of the batch.
+                    </span>
+                  )}
+                </p>
               </div>
             )}
 
