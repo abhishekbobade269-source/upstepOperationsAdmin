@@ -18,6 +18,7 @@ import { CalendarScheduleGrid } from './components/CalendarScheduleGrid';
 import { SlotBookingModal } from './components/SlotBookingModal';
 import { LoginPage } from './components/LoginPage';
 import { PageLoader } from './components/PageLoader';
+import { UserManagement } from './components/UserManagement';
 import './index.css';
 
 export function App() {
@@ -596,6 +597,10 @@ export function App() {
         </div>
 
         {/* ADMIN PORTAL */}
+        <div style={{ display: activePortal === 'admin' && activeTab === 'users' ? 'block' : 'none' }}>
+          <UserManagement />
+        </div>
+
         <div style={{ display: activePortal === 'admin' && activeTab === 'shifts' ? 'block' : 'none' }}>
           <CustomShiftBuilder
             shifts={shifts}

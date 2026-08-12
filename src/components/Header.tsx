@@ -3,7 +3,8 @@ import {
   Calendar, 
   Clock,
   Search, 
-  User, 
+  User,
+  Users,
   Settings, 
   AlertTriangle, 
   PlusCircle, 
@@ -287,6 +288,16 @@ export const Header: React.FC<HeaderProps> = ({
               </>
             ) : (
               <>
+                {currentRole === 'admin' && (
+                  <button
+                    type="button"
+                    className={`sub-nav-btn ${activeTab === 'users' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('users')}
+                  >
+                    <Users className="icon-sm text-gold" />
+                    🔑 User & Credential Management
+                  </button>
+                )}
                 <button
                   type="button"
                   className={`sub-nav-btn ${activeTab === 'shifts' ? 'active' : ''}`}

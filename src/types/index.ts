@@ -7,6 +7,15 @@ export interface AuthUser {
   roleTitle: string;
 }
 
+export interface UserAccount {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  role: Role;
+  createdAt: string;
+}
+
 export type SlotStatusType = 
   | 'AVAILABLE'                    // Free Slot (X)
   | 'OFF_DUTY'                     // Off/Meal BREAK (Red)
