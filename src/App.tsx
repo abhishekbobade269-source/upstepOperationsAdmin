@@ -5,6 +5,8 @@ import { isTemporaryOrDemo, addMinutesToTime } from './utils/shiftUtils';
 import { detectScheduleConflicts, DEFAULT_RULE_CONFIG } from './utils/conflictDetector';
 import { ensureLeadTrainersInCoaches } from './utils/trainerUtils';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
+import { Dashboard } from './components/Dashboard';
 import { ScheduleGrid } from './components/ScheduleGrid';
 import { MultiDaySearch } from './components/MultiDaySearch';
 import { CoachProfile } from './components/CoachProfile';
@@ -40,7 +42,12 @@ export function App() {
   const [activeTab, setActiveTabState] = useState<string>(() => {
     const saved = localStorage.getItem('upstep_active_tab');
     if (currentUser?.role === 'salesperson') return 'sameday_demo_tracker';
-    return saved || 'grid';
+    return saved || 'dashboard';
+  });
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    const saved = localStorage.getItem('upstep_sidebar_collapsed');
+    return saved === 'true';
   });
 
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -414,6 +421,10 @@ export function App() {
     setShifts(shifts.filter(s => s.id !== shiftId));
   };
 
+  const handleUpdateShift = (updatedShift: ShiftTemplate) => {
+    setShifts(prev => prev.map(s => s.id === updatedShift.id ? updatedShift : s));
+  };
+
   const handleReassignSlot = (sourceSlot: Slot, targetSlotId: number) => {
     setSlots(prevSlots => {
       return prevSlots.map(s => {
@@ -450,26 +461,30 @@ export function App() {
   const handleAddSlotsRow = (coachId: number, startTime: string, endTime: string) => {
     const targetCoach = coaches.find(c => c.id === coachId);
     if (!targetCoach) return;
-    
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const coachSlots = slots.filter(s => s.coach_id === coachId);
-    const existingShiftName = coachSlots.length > 0 ? coachSlots[0].shift_name : 'Custom';
-    const existingRmName = coachSlots.length > 0 ? coachSlots[0].rm_name : (targetCoach.trainer_manager || 'Vedant Kamble');
 
-    const newSlots: Slot[] = days.map(day => ({
-      id: Date.now() + Math.floor(Math.random() * 100000),
-      coach_id: coachId,
-      coach_name: targetCoach.name,
-      rm_name: existingRmName,
-      shift_name: existingShiftName,
-      day_of_week: day as any,
-      start_time: startTime,
-      end_time: endTime,
-      status_type: 'AVAILABLE',
-      activity: 'X'
-    }));
-    
-    setSlots(prevSlots => [...prevSlots, ...newSlots]);
+    const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+    const coachSlots = slots.filter(s => s.coach_id === coachId);
+    const existingShiftName = coachSlots.length > 0 ? coachSlots[0].shift_name : (targetCoach.shift_type || 'Custom-Shift');
+    const existingRmName = coachSlots.length > 0 ? coachSlots[0].rm_name : (targetCoach.rm_name || targetCoach.trainer_manager || 'Operations Admin');
+
+    const newSlots: Slot[] = DAYS.map((day) => {
+      const isWeekend = day === 'Saturday' || day === 'Sunday';
+      return {
+        id: Date.now() + Math.floor(Math.random() * 100000),
+        coach_id: coachId,
+        coach_name: targetCoach.display_name,
+        rm_name: existingRmName,
+        shift_name: existingShiftName,
+        day_of_week: day,
+        start_time: startTime,
+        end_time: endTime,
+        status_type: isWeekend ? 'OFF_DUTY' : 'AVAILABLE',
+        activity: isWeekend ? 'OFF' : 'X',
+        notes: 'Custom slot row added'
+      };
+    });
+
+    setSlots(prev => [...prev, ...newSlots]);
   };
 
   const handleDeleteSlotsRow = (coachId: number, startTime: string) => {
@@ -489,155 +504,183 @@ export function App() {
   }
 
   return (
-    <div className="app-root">
+    <div className="app-layout">
       {isPageLoading && <PageLoader message={loadingMessage} />}
 
-      {/* Header */}
-      <Header
-        currentRole={currentRole}
-        setCurrentRole={(r) => {
-          setCurrentRole(r);
-          if (currentUser) {
-            let roleTitle = 'System Admin';
-            if (r === 'manager') roleTitle = 'Ops Manager';
-            if (r === 'salesperson') roleTitle = 'Sales Executive';
-            setCurrentUser({ ...currentUser, role: r, roleTitle });
-          }
-        }}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        activePortal={activePortal}
-        setActivePortal={setActivePortal}
+      {/* Left Sidebar Navigation */}
+      <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        metrics={metrics}
-        onResetDatabase={handleResetDatabase}
+        activePortal={activePortal}
+        setActivePortal={setActivePortal}
+        conflictsCount={conflicts.length}
+        currentRole={currentRole}
+        currentUser={currentUser}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
-      {/* Main Content Area */}
-      <main className="main-container">
-        {/* MANAGEMENT PORTAL */}
-        <div style={{ display: activePortal === 'management' && activeTab === 'grid' ? 'block' : 'none' }}>
-          <ScheduleGrid
-            coaches={coaches}
-            slots={slots}
-            conflicts={conflicts}
-            highlightedCoachTarget={highlightedCoachTarget}
-            onSelectSlot={handleSelectSlotCell}
-            onOpenBookingModal={handleOpenBookingForCoach}
-            onSwitchToCalendarView={() => setActiveTab('calendar_grid')}
-          />
-        </div>
+      {/* Main Panel Content Area */}
+      <div className="main-panel">
+        {/* Header / Top Bar */}
+        <Header
+          currentRole={currentRole}
+          setCurrentRole={(r) => {
+            setCurrentRole(r);
+            if (currentUser) {
+              let roleTitle = 'System Admin';
+              if (r === 'manager') roleTitle = 'Ops Manager';
+              if (r === 'salesperson') roleTitle = 'Sales Executive';
+              setCurrentUser({ ...currentUser, role: r, roleTitle });
+            }
+          }}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          activePortal={activePortal}
+          setActivePortal={setActivePortal}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          metrics={metrics}
+          onResetDatabase={handleResetDatabase}
+        />
 
-        <div style={{ display: activePortal === 'management' && activeTab === 'calendar_grid' ? 'block' : 'none' }}>
-          <CalendarScheduleGrid
-            coaches={coaches}
-            slots={slots}
-            dateOverrides={dateOverrides}
-            onSelectSlot={handleSelectSlotCell}
-            onOpenBookingModal={handleOpenBookingForCoach}
-            onSaveDateOverride={handleSaveDateOverride}
-            onSwitchToMasterGrid={() => setActiveTab('grid')}
-          />
-        </div>
+        {/* Main Scrollable Content */}
+        <main className="main-container">
+          {/* DASHBOARD */}
+          <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
+            <Dashboard
+              coaches={coaches}
+              slots={slots}
+              conflicts={conflicts}
+              setActiveTab={setActiveTab}
+              setActivePortal={setActivePortal}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'management' && activeTab === 'search' ? 'block' : 'none' }}>
-          <MultiDaySearch
-            coaches={coaches}
-            slots={slots}
-            onBookSearchResult={handleBookSearchResult}
-          />
-        </div>
+          {/* MANAGEMENT PORTAL */}
+          <div style={{ display: activePortal === 'management' && activeTab === 'grid' ? 'block' : 'none' }}>
+            <ScheduleGrid
+              coaches={coaches}
+              slots={slots}
+              conflicts={conflicts}
+              highlightedCoachTarget={highlightedCoachTarget}
+              onSelectSlot={handleSelectSlotCell}
+              onOpenBookingModal={handleOpenBookingForCoach}
+              onSwitchToCalendarView={() => setActiveTab('calendar_grid')}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'management' && activeTab === 'trainers' ? 'block' : 'none' }}>
-          <TrainersPortal
-            coaches={coaches}
-            slots={slots}
-            onOpenBookingModal={handleOpenBookingForCoach}
-            onSelectCoachForProfile={(coachId) => {
-              setActiveTab('profile');
-              localStorage.setItem('upstep_selected_coach_id', coachId.toString());
-            }}
-            onUpdateCoach={handleUpdateCoach}
-            onAddCoach={(newCoach) => handleAddCoach(newCoach, shifts[0])}
-            onSelectSlot={handleSelectSlotCell}
-          />
-        </div>
+          <div style={{ display: activePortal === 'management' && activeTab === 'calendar_grid' ? 'block' : 'none' }}>
+            <CalendarScheduleGrid
+              coaches={coaches}
+              slots={slots}
+              dateOverrides={dateOverrides}
+              onSelectSlot={handleSelectSlotCell}
+              onOpenBookingModal={handleOpenBookingForCoach}
+              onSaveDateOverride={handleSaveDateOverride}
+              onSwitchToMasterGrid={() => setActiveTab('grid')}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'management' && activeTab === 'daily_demo_slots' ? 'block' : 'none' }}>
-          <DailyDemoSlotsHub
-            coaches={coaches}
-            slots={slots}
-            onUpdateCoach={handleUpdateCoach}
-          />
-        </div>
+          <div style={{ display: activePortal === 'management' && activeTab === 'search' ? 'block' : 'none' }}>
+            <MultiDaySearch
+              coaches={coaches}
+              slots={slots}
+              onBookSearchResult={handleBookSearchResult}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'management' && activeTab === 'sameday_demo_tracker' ? 'block' : 'none' }}>
-          <SameDayDemoTracker
-            coaches={coaches}
-            slots={slots}
-          />
-        </div>
+          <div style={{ display: activePortal === 'management' && activeTab === 'trainers' ? 'block' : 'none' }}>
+            <TrainersPortal
+              coaches={coaches}
+              slots={slots}
+              onOpenBookingModal={handleOpenBookingForCoach}
+              onSelectCoachForProfile={(coachId) => {
+                setActiveTab('profile');
+                localStorage.setItem('upstep_selected_coach_id', coachId.toString());
+              }}
+              onUpdateCoach={handleUpdateCoach}
+              onAddCoach={(newCoach) => handleAddCoach(newCoach, shifts[0])}
+              onSelectSlot={handleSelectSlotCell}
+            />
+          </div>
 
+          <div style={{ display: activePortal === 'management' && activeTab === 'daily_demo_slots' ? 'block' : 'none' }}>
+            <DailyDemoSlotsHub
+              coaches={coaches}
+              slots={slots}
+              onUpdateCoach={handleUpdateCoach}
+            />
+          </div>
 
+          <div style={{ display: activePortal === 'management' && activeTab === 'sameday_demo_tracker' ? 'block' : 'none' }}>
+            <SameDayDemoTracker
+              coaches={coaches}
+              slots={slots}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'management' && activeTab === 'profile' ? 'block' : 'none' }}>
-          <CoachProfile
-            coaches={coaches}
-            slots={slots}
-            currentRole={currentRole}
-            onUpdateCoach={handleUpdateCoach}
-            onSelectSlot={handleSelectSlotCell}
-            onOpenBookingModal={handleOpenBookingForCoach}
-            onAddSlotsRow={handleAddSlotsRow}
-            onDeleteSlotsRow={handleDeleteSlotsRow}
-          />
-        </div>
+          <div style={{ display: activePortal === 'management' && activeTab === 'profile' ? 'block' : 'none' }}>
+            <CoachProfile
+              coaches={coaches}
+              slots={slots}
+              currentRole={currentRole}
+              onUpdateCoach={handleUpdateCoach}
+              onSelectSlot={handleSelectSlotCell}
+              onOpenBookingModal={handleOpenBookingForCoach}
+              onAddSlotsRow={handleAddSlotsRow}
+              onDeleteSlotsRow={handleDeleteSlotsRow}
+            />
+          </div>
 
-        {/* ADMIN PORTAL */}
-        <div style={{ display: activePortal === 'admin' && activeTab === 'users' ? 'block' : 'none' }}>
-          <UserManagement />
-        </div>
+          {/* ADMIN PORTAL */}
+          <div style={{ display: activePortal === 'admin' && activeTab === 'users' ? 'block' : 'none' }}>
+            <UserManagement />
+          </div>
 
-        <div style={{ display: activePortal === 'admin' && activeTab === 'shifts' ? 'block' : 'none' }}>
-          <CustomShiftBuilder
-            shifts={shifts}
-            onCreateShift={handleCreateShift}
-            onDeleteShift={handleDeleteShift}
-          />
-        </div>
+          <div style={{ display: activePortal === 'admin' && activeTab === 'shifts' ? 'block' : 'none' }}>
+            <CustomShiftBuilder
+              shifts={shifts}
+              onCreateShift={handleCreateShift}
+              onDeleteShift={handleDeleteShift}
+              coaches={coaches}
+              slots={slots}
+              onUpdateShift={handleUpdateShift}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'admin' && activeTab === 'onboard' ? 'block' : 'none' }}>
-          <CoachOnboarding
-            shifts={shifts}
-            onAddCoach={handleAddCoach}
-          />
-        </div>
+          <div style={{ display: activePortal === 'admin' && activeTab === 'onboard' ? 'block' : 'none' }}>
+            <CoachOnboarding
+              shifts={shifts}
+              onAddCoach={handleAddCoach}
+            />
+          </div>
 
-        <div style={{ display: activePortal === 'admin' && activeTab === 'audit' ? 'block' : 'none' }}>
-          <ConflictAudit
-            conflicts={conflicts}
-            coaches={coaches}
-            slots={slots}
-            onResolveConflict={handleResolveConflict}
-            onIgnoreConflict={handleIgnoreConflict}
-            ruleConfig={ruleConfig}
-            onToggleRule={(ruleKey) => setRuleConfig(prev => ({ ...prev, [ruleKey]: !prev[ruleKey] }))}
-            onGrantCoachException={(coachName) => {
-              setActivePortal('management');
-              setActiveTab('profile');
-              const coachObj = coaches.find(c => c.name.toLowerCase() === coachName.toLowerCase() || c.display_name.toLowerCase() === coachName.toLowerCase());
-              if (coachObj) {
-                localStorage.setItem('upstep_selected_coach_id', coachObj.id.toString());
-              }
-            }}
-            onSelectSlot={handleSelectSlotCell}
-            onOpenBookingModal={handleOpenBookingForCoach}
-          />
-        </div>
-      </main>
+          <div style={{ display: activePortal === 'admin' && activeTab === 'audit' ? 'block' : 'none' }}>
+            <ConflictAudit
+              conflicts={conflicts}
+              coaches={coaches}
+              slots={slots}
+              onResolveConflict={handleResolveConflict}
+              onIgnoreConflict={handleIgnoreConflict}
+              ruleConfig={ruleConfig}
+              onToggleRule={(ruleKey) => setRuleConfig(prev => ({ ...prev, [ruleKey]: !prev[ruleKey] }))}
+              onGrantCoachException={(coachName) => {
+                setActivePortal('management');
+                setActiveTab('profile');
+                const coachObj = coaches.find(c => c.name.toLowerCase() === coachName.toLowerCase() || c.display_name.toLowerCase() === coachName.toLowerCase());
+                if (coachObj) {
+                  localStorage.setItem('upstep_selected_coach_id', coachObj.id.toString());
+                }
+              }}
+              onSelectSlot={handleSelectSlotCell}
+              onOpenBookingModal={handleOpenBookingForCoach}
+            />
+          </div>
+        </main>
+      </div>
 
       {/* Slot Booking / Release Modal */}
       <SlotBookingModal

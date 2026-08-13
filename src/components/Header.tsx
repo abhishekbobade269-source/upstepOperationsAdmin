@@ -230,6 +230,14 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <button
                   type="button"
+                  className={`sub-nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <Briefcase className="icon-sm text-gold" />
+                  📊 Dashboard
+                </button>
+                <button
+                  type="button"
                   className={`sub-nav-btn ${activeTab === 'grid' ? 'active' : ''}`}
                   onClick={() => setActiveTab('grid')}
                 >

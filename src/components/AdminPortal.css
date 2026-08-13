@@ -4,7 +4,7 @@
 .mode-toggle-group {
   display: flex !important;
   align-items: center !important;
-  background: var(--bg-card) !important;
+  background: rgba(9, 14, 26, 0.45) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: 10px !important;
   padding: 4px !important;
@@ -15,28 +15,28 @@
 .mode-btn {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 0.5rem !important;
-  padding: 0.55rem 1.1rem !important;
+  gap: 0.45rem !important;
+  padding: 0.5rem 1rem !important;
   border-radius: 8px !important;
   border: none !important;
   background: transparent !important;
-  color: #94a3b8 !important;
-  font-size: 0.85rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.82rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   white-space: nowrap !important;
-  transition: all 0.2s ease !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .mode-btn:hover {
-  color: #f8fafc !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
 }
 
 .mode-btn.active {
-  background: #3b82f6 !important;
+  background: var(--accent-blue) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
 }
 
 /* Template Selector Bar & Layout Alignment */
@@ -74,37 +74,43 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 0.4rem !important;
-  padding: 0.4rem 0.85rem !important;
-  border-radius: 20px !important;
-  font-size: 0.82rem !important;
+  padding: 0.35rem 0.8rem !important;
+  border-radius: 99px !important;
+  font-size: 0.76rem !important;
   font-weight: 600 !important;
   border: 1px solid transparent !important;
   white-space: nowrap !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important;
+  transition: transform 0.2s ease, filter 0.2s ease !important;
+}
+
+.badge-pill:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.1) !important;
 }
 
 .badge-pill.blue {
-  background: rgba(59, 130, 246, 0.2) !important;
-  border-color: #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
   color: #60a5fa !important;
 }
 
 .badge-pill.gold {
-  background: rgba(245, 158, 11, 0.15) !important;
-  border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
   color: #fbbf24 !important;
 }
 
 .badge-pill.green {
-  background: rgba(16, 185, 129, 0.2) !important;
-  border-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
   color: #34d399 !important;
 }
 
 .badge-pill.orange {
-  background: rgba(249, 115, 22, 0.2) !important;
-  border-color: #f97316 !important;
-  color: #fb923c !important;
+  background: rgba(249, 115, 22, 0.12) !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
+  color: #ff9d5c !important;
 }
 
 /* Conflict Audit Summary Bar Metrics Layout */
@@ -130,6 +136,13 @@
   border-radius: 12px !important;
   padding: 0.85rem 1.25rem !important;
   min-width: 240px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  transition: transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+.summary-metric-box:hover {
+  transform: translateY(-2px) !important;
+  border-color: var(--border-color-highlight) !important;
 }
 
 .summary-metric-box.red-border {
@@ -141,42 +154,53 @@
 }
 
 .metric-icon-wrap {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid transparent;
 }
 
-.metric-icon-wrap.red-bg { background: rgba(239, 68, 68, 0.25); }
-.metric-icon-wrap.green-bg { background: rgba(16, 185, 129, 0.2); }
+.metric-icon-wrap.red-bg { 
+  background: rgba(239, 68, 68, 0.1) !important; 
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+.metric-icon-wrap.green-bg { 
+  background: rgba(16, 185, 129, 0.1) !important; 
+  color: #86efac !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
 
 .metric-count {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1;
   display: block;
+  font-family: var(--heading-font);
 }
 
 .metric-title {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   display: block;
   line-height: 1.2;
 }
 
 .metric-desc {
-  font-size: 0.78rem;
-  color: #94a3b8;
+  font-size: 0.76rem;
+  color: var(--text-muted);
   display: block;
+  margin-top: 2px;
 }
 
 .rule-chips-list {
   display: flex !important;
   align-items: center !important;
-  gap: 0.5rem !important;
+  gap: 0.45rem !important;
   flex-wrap: wrap !important;
 }
 
@@ -184,15 +208,21 @@
   display: inline-flex !important;
   align-items: center !important;
   gap: 0.35rem !important;
-  padding: 0.35rem 0.75rem !important;
+  padding: 0.3rem 0.7rem !important;
   border-radius: 20px !important;
-  font-size: 0.78rem !important;
+  font-size: 0.76rem !important;
   font-weight: 600 !important;
-  background: var(--bg-card) !important;
+  background: rgba(255,255,255,0.02) !important;
   border: 1px solid var(--border-color) !important;
+  transition: all 0.2s ease !important;
 }
 
-.rule-chip.gold { color: #f59e0b; border-color: rgba(245, 158, 11, 0.4); }
-.rule-chip.blue { color: #3b82f6; border-color: rgba(59, 130, 246, 0.4); }
-.rule-chip.purple { color: #c084fc; border-color: rgba(147, 51, 234, 0.4); }
-.rule-chip.green { color: #10b981; border-color: rgba(16, 185, 129, 0.4); }
+.rule-chip:hover {
+  background: rgba(255,255,255,0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+.rule-chip.gold { color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.05) !important; }
+.rule-chip.blue { color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05) !important; }
+.rule-chip.purple { color: #c084fc; border-color: rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05) !important; }
+.rule-chip.green { color: #10b981; border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05) !important; }

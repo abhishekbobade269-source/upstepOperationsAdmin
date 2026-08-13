@@ -68,6 +68,27 @@ export interface Coach {
   exempt_consecutive_limit?: boolean; // Exempt from max 4 consecutive sessions rule
   exempt_capacity_limit?: boolean;    // Exempt from weekly hours capacity limit
   special_exception_notes?: string;
+  fide_id?: string;
+  fide_profile_link?: string;
+  chess_com_id?: string;
+  lichess_org_id?: string;
+  rapid_rating?: number;
+  blitz_rating?: number;
+  fluent_languages?: string;
+  understand_languages?: string;
+  foundation_level_permanent?: string;
+  master_level_permanent?: string;
+  foundation_demo?: 'No' | 'Yes';
+  master_demo?: 'No' | 'Yes';
+  available_teaching_material?: string;
+  coach_teaching_material?: string;
+  cover_up_substitute?: 'No' | 'Yes';
+  consecutive_5_classes?: 'No' | 'Yes';
+  session_a_day?: number;
+  working_hours?: number;
+  working_days?: string;
+  shift_name?: string;
+  last_updated_date?: string;
 }
 
 export interface RelationshipManager {
@@ -150,7 +171,10 @@ export interface ShiftTemplate {
   working_days: string; // e.g. "Mon-Sat", "Tue-Sun"
   regions: string[];    // ["UK", "USA", "AUS", "IND", "SIN", "UAE", "EUR", "WW"]
   requires_daylight: boolean;
+  iana_timezone?: string;
+  dst_transition_strategy?: 'NONE' | 'FULL_SHIFT' | 'SPECIAL_TEMPLATE';
   slots: ShiftSlotDefinition[];
+  daylightSlots?: ShiftSlotDefinition[];
 }
 
 export interface ConflictReport {
