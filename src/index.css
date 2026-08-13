@@ -125,7 +125,9 @@ body.light-mode .avatar-circle-wrapper {
 
 html, body {
   height: 100%;
+  /* Never let the page-level scroll happen */
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 body {
@@ -143,11 +145,12 @@ body {
   overflow: hidden;
 }
 
-/* App root — fills the #root container, header fixed at top, content scrolls */
+/* App root — fills the #root container, header pinned at top via fixed, content scrolls below */
 .app-root {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 100%;
   overflow: hidden;
   background: var(--bg-primary);
 }
@@ -193,14 +196,19 @@ input:focus, select:focus, textarea:focus,
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
 }
 
-/* App Header */
+/* App Header — FIXED to top so it never scrolls away on ANY browser */
 .app-header {
   background-color: var(--bg-glass);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 200 !important;
+  flex-shrink: 0;
 }
 
 .header-top {
@@ -363,13 +371,16 @@ input:focus, select:focus, textarea:focus,
   border-bottom-color: var(--accent-gold);
 }
 
-/* Main Layout Container — this is the scroll zone, NOT the whole page */
+/* Main Layout Container — scrollable zone, sits BELOW the fixed header */
 .main-container {
   padding: 1.5rem;
+  /* Top padding accounts for the fixed header height (~100px for header-top + nav bar) */
+  padding-top: calc(1.5rem + 100px);
   width: 100%;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  height: 100vh;
   /* smooth scrollbar */
   scrollbar-width: thin;
   scrollbar-color: var(--border-color) transparent;
@@ -1870,9 +1881,11 @@ body.light-mode .booking-date-input-wrap input[type="date"] { background: #fff; 
     display: flex;
   }
 
-  /* Main Container Padding */
+  /* Main Container Padding on mobile — smaller header ~68px */
   .main-container {
     padding: 0.75rem;
+    padding-top: calc(0.75rem + 68px);
+    height: 100vh;
   }
 
   /* Mobile Master Grid Adaptations */
