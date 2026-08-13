@@ -1161,12 +1161,18 @@ input:focus, select:focus, textarea:focus,
   background: var(--bg-card);
 }
 
-/* Expanded date header — blue accent when a column is expanded */
+
+/* Expanded date header — blue accent when a column is expanded — MUST be opaque (no transparency) */
 .cal-th.cal-expanded-header {
-  background: linear-gradient(135deg, rgba(59,130,246,0.28), rgba(99,102,241,0.22));
+  background: #1a2e5a !important;
   border-bottom: 2px solid #3b82f6;
   color: #93c5fd;
   min-width: unset; /* colSpan=2 handles width naturally */
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  /* Solid opaque so grid rows never show through on scroll */
+  opacity: 1;
 }
 
 /* Sub-slot column headers (1st 20 Min / 2nd 20 Min) */
@@ -1400,8 +1406,8 @@ input:focus, select:focus, textarea:focus,
 /* Light mode overrides for calendar */
 body.light-mode .cal-table-wrap { border-color: #cbd5e1; background: #fff; }
 body.light-mode .cal-th { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
-body.light-mode .cal-th.cal-expanded-header { background: rgba(59,130,246,0.1); color: #1d4ed8; }
-body.light-mode .cal-th-subslot { background: rgba(59,130,246,0.08); color: #1d4ed8; }
+body.light-mode .cal-th.cal-expanded-header { background: #dbeafe !important; color: #1d4ed8; border-bottom-color: #3b82f6; }
+body.light-mode .cal-th-subslot { background: #eff6ff; color: #1d4ed8; }
 body.light-mode .cal-td { border-color: #e2e8f0; }
 body.light-mode .cal-td-subslot { background: rgba(59,130,246,0.04); border-color: #bfdbfe; }
 body.light-mode .cal-th-sticky-left,
@@ -1461,6 +1467,11 @@ body.light-mode .btn-switch-view { background: rgba(245,158,11,0.08); color: #d9
   border: none !important;
   overflow: hidden;
   transition: padding 0.3s ease, border-color 0.3s ease;
+  /* Sticky by default so when open, always sticks to top */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-secondary, #1a2540);
 }
 .cal-th-sub.sub-open {
   padding: 0.35rem 0.3rem !important;
@@ -1471,15 +1482,22 @@ body.light-mode .btn-switch-view { background: rgba(245,158,11,0.08); color: #d9
   color: var(--accent-blue);
   text-align: center;
   white-space: nowrap;
-  background: rgba(59, 130, 246, 0.08);
+  /* Fully opaque solid background so body rows never bleed through on scroll */
+  background: #172448 !important;
+  position: sticky;
+  top: 0;
+  z-index: 12;
 }
 
 /* 5-Min Rest Break sub-slot */
 .cal-break-cell {
-  background: rgba(139, 0, 255, 0.12) !important;
-  border-top: 1px solid rgba(139, 0, 255, 0.25) !important;
-  border-bottom: 1px solid rgba(139, 0, 255, 0.25) !important;
+  background: #1e1040 !important;
+  border-top: 1px solid rgba(139, 0, 255, 0.4) !important;
+  border-bottom: 1px solid rgba(139, 0, 255, 0.4) !important;
   pointer-events: none !important;
+  position: sticky;
+  top: 0;
+  z-index: 12;
 }
 .cal-break-cell .cal-subslot-slide.open {
   justify-content: center;
@@ -1574,7 +1592,7 @@ body.light-mode .btn-switch-view { background: rgba(245,158,11,0.08); color: #d9
 
 /* Light mode overrides */
 body.light-mode .cal-td-sub.sub-open { background: rgba(59,130,246,0.03); border-color: #e2e8f0 !important; }
-body.light-mode .cal-th-sub.sub-open { background: rgba(59,130,246,0.06); border-color: #bfdbfe !important; color: #1d4ed8; }
+body.light-mode .cal-th-sub.sub-open { background: #dbeafe !important; border-color: #bfdbfe !important; color: #1d4ed8; }
 body.light-mode .cal-break-cell { background: rgba(139,0,255,0.06) !important; }
 body.light-mode .cal-break-label { color: #7c3aed; }
 body.light-mode .cal-free-slot-pill { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); color: #059669; }
