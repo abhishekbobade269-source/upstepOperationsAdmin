@@ -445,14 +445,17 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
                         {isToday && <span style={{ fontSize: '0.63rem', fontWeight: 700 }}>● TODAY</span>}
                         <span className="cal-expand-hint">click to collapse</span>
                       </th>
-                      {/* 1st 20 Min animated header */}
-                      <th className={`cal-th-sub sub-open`} style={{ position: 'relative' }}>
+                      {/* 1st 20 Min animated header — NO inline position override, CSS sticky applies */}
+                      <th className={`cal-th-sub sub-open`}>
                         <div className="cal-subslot-slide open" style={{ padding: '0.35rem 0.3rem', flexDirection: 'column', alignItems: 'center' }}>
                           <span>⚡ 1st 20 Min</span>
                         </div>
                       </th>
-                      {/* 5 Min Break animated header */}
-                      <th className="cal-th-sub sub-open cal-break-cell">
+                      {/* 5 Min Break animated header — explicit inline sticky + opaque background so rows don't bleed through */}
+                      <th
+                        className="cal-th-sub sub-open cal-break-cell"
+                        style={{ position: 'sticky', top: 0, zIndex: 15, background: '#1e1040', pointerEvents: 'none' }}
+                      >
                         <div className="cal-subslot-slide open" style={{ padding: '0.35rem 0.3rem', flexDirection: 'column', alignItems: 'center' }}>
                           <span className="cal-break-label">🟣 5 Min Break</span>
                         </div>
