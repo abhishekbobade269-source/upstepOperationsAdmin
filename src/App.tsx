@@ -424,7 +424,6 @@ export function App() {
   const handleUpdateShift = (updatedShift: ShiftTemplate) => {
     setShifts(prev => prev.map(s => s.id === updatedShift.id ? updatedShift : s));
   };
-
   const handleReassignSlot = (sourceSlot: Slot, targetSlotId: number) => {
     setSlots(prevSlots => {
       return prevSlots.map(s => {
@@ -544,6 +543,8 @@ export function App() {
           setDarkMode={setDarkMode}
           metrics={metrics}
           onResetDatabase={handleResetDatabase}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
         {/* Main Scrollable Content */}
