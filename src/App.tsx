@@ -544,7 +544,6 @@ export function App() {
           metrics={metrics}
           onResetDatabase={handleResetDatabase}
           isSidebarCollapsed={isSidebarCollapsed}
-          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
         {/* Main Scrollable Content */}

@@ -12,8 +12,6 @@ import {
   Briefcase,
   Menu,
   X,
-  PanelLeftClose,
-  PanelLeftOpen,
   LogOut,
   LayoutDashboard,
   Zap,
@@ -40,7 +38,6 @@ interface HeaderProps {
   };
   onResetDatabase?: () => void;
   isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -56,8 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   setDarkMode,
   metrics,
   onResetDatabase,
-  isSidebarCollapsed = false,
-  onToggleSidebar
+  isSidebarCollapsed = false
 }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -73,19 +69,6 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Top Bar */}
         <div className="header-top">
           <div className="brand-section">
-            {/* Desktop Sidebar Toggle Button */}
-            {onToggleSidebar && (
-              <button
-                type="button"
-                className="icon-button sidebar-collapse-toggle-btn"
-                onClick={onToggleSidebar}
-                title={isSidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
-                style={{ marginRight: '0.25rem' }}
-              >
-                {isSidebarCollapsed ? <PanelLeftOpen size={18} color="var(--accent-gold)" /> : <PanelLeftClose size={18} color="var(--accent-gold)" />}
-              </button>
-            )}
-
             {/* Mobile Menu Toggle */}
             <button 
               type="button" 
@@ -96,10 +79,13 @@ export const Header: React.FC<HeaderProps> = ({
               {isDrawerOpen ? <X className="icon" /> : <Menu className="icon" />}
             </button>
             
-            <div className="brand-logo">
+            {/* Mobile-only logo (on desktop, logo is always in the sidebar) */}
+            <div className="brand-logo mobile-only-logo">
               <span>♟️</span>
             </div>
-            <div>
+
+            {/* Title Block: Rendered on the right of the closed sidebar bar, or always on mobile */}
+            <div className={`header-title-block ${isSidebarCollapsed ? 'show-desktop' : 'hide-desktop'}`}>
               <h1 className="app-title">Upstep Operations</h1>
               <p className="app-subtitle">Operations & Master Slot Management System</p>
             </div>

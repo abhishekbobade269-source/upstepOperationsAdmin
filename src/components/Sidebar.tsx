@@ -164,11 +164,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onToggleCollapse && (
           <button 
             type="button" 
-            className="collapse-btn" 
+            className="sidebar-collapse-pill" 
             onClick={onToggleCollapse}
-            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar (Click to expand)" : "Collapse sidebar (Click to collapse)"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight className="icon-sm" /> : <ChevronLeft className="icon-sm" />}
+            {isCollapsed ? (
+              <ChevronRight className="icon-sm" />
+            ) : (
+              <>
+                <ChevronLeft className="icon-sm" />
+                <span>Collapse Sidebar</span>
+              </>
+            )}
           </button>
         )}
       </div>
