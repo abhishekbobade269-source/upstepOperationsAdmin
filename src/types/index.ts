@@ -65,6 +65,7 @@ export interface Coach {
   role_type?: 'Coach' | 'Trainer' | 'Head Trainer';
   profile_pic?: string;
   custom_weekly_hours_limit?: number; // Override default 36h/18h limit
+  custom_daily_hours_limit?: number;  // Override default 6h/4.5h limit
   exempt_consecutive_limit?: boolean; // Exempt from max 4 consecutive sessions rule
   exempt_capacity_limit?: boolean;    // Exempt from weekly hours capacity limit
   special_exception_notes?: string;
@@ -104,6 +105,7 @@ export interface RelationshipManager {
 export interface AuditRuleConfig {
   enableOverlapCheck: boolean;
   enableWeeklyCapacityCheck: boolean;
+  enableDailyCapacityCheck?: boolean;
   enableConsecutiveSessionsCheck: boolean;
   enableRestBreakCheck: boolean;
   enableMidnightCrossoverCheck: boolean;
@@ -179,7 +181,7 @@ export interface ShiftTemplate {
 
 export interface ConflictReport {
   id: string;
-  type: 'OVERLAP' | 'CAPACITY_BREACH' | 'CONSECUTIVE_SESSIONS_BREACH' | 'REST_BREAK_VIOLATION' | 'RATING_MISMATCH' | 'MIDNIGHT_CROSSOVER';
+  type: 'OVERLAP' | 'CAPACITY_BREACH' | 'DAILY_CAPACITY_BREACH' | 'CONSECUTIVE_SESSIONS_BREACH' | 'REST_BREAK_VIOLATION' | 'RATING_MISMATCH' | 'MIDNIGHT_CROSSOVER';
   coach_name: string;
   day: string;
   description: string;

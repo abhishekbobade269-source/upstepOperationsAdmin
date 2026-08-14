@@ -4,6 +4,7 @@ import { timeToMinutes, isNightShiftCoach, isTemporaryOrDemo } from './shiftUtil
 export const DEFAULT_RULE_CONFIG: AuditRuleConfig = {
   enableOverlapCheck: true,
   enableWeeklyCapacityCheck: true,
+  enableDailyCapacityCheck: true,
   enableConsecutiveSessionsCheck: true,
   enableRestBreakCheck: true,
   enableMidnightCrossoverCheck: true,
@@ -261,8 +262,33 @@ export function detectScheduleConflicts(
       });
     }
 
-    // Evaluate consecutive sessions and continuous teaching minutes along each Shift Run
+    // Evaluate daily working capacity, consecutive sessions and continuous teaching minutes along each Shift Run
     shiftRuns.forEach(run => {
+      // 4a. Check Daily Working Hours Limit for this Shift Run
+      if (ruleConfig.enableDailyCapacityCheck && !isCapacityExempt) {
+        let dailyTeachingMins = 0;
+        run.slots.forEach(s => {
+          if (isPermanentClassSlot(s)) {
+            dailyTeachingMins += getSlotDurationMinutes(s.start_time, s.end_time);
+          }
+        });
+
+        const dailyTeachingHours = +(dailyTeachingMins / 60).toFixed(1);
+        const defaultMaxDailyHours = empType === 'Part Time' ? 4.5 : 6.0;
+        const maxDailyHours = coachObj?.custom_daily_hours_limit || coachObj?.class_hours_per_day || defaultMaxDailyHours;
+
+        if (dailyTeachingHours > maxDailyHours) {
+          conflicts.push({
+            id: `conf-daily-capacity-${counter++}`,
+            type: 'DAILY_CAPACITY_BREACH',
+            coach_name: coachName,
+            day: run.shiftDay,
+            description: `Daily working hours limit exceeded on ${run.shiftDay} ${run.isNightShift ? 'Night Shift' : 'Shift'}! Assigned ${dailyTeachingHours} hrs (${empType} limit: ${maxDailyHours} hrs/day).`,
+            slot1: `Daily Total: ${dailyTeachingHours} hrs / ${maxDailyHours} hrs limit`
+          });
+        }
+      }
+
       let consecutiveSessionsCount = 0;
       let continuousTeachingMins = 0;
       let prevSlot: Slot | null = null;

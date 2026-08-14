@@ -81,7 +81,12 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateCoach(formData);
+    const updated: Coach = {
+      ...formData,
+      class_hours_per_day: formData.class_hours_per_day || formData.custom_daily_hours_limit || 6.0,
+      custom_daily_hours_limit: formData.custom_daily_hours_limit || formData.class_hours_per_day || 6.0
+    };
+    onUpdateCoach(updated);
     setIsEditing(false);
   };
 
@@ -216,10 +221,11 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
       }
     });
     const totalHours = +(activeMins / 60).toFixed(1);
-    const limit = coach ? (coach.emp_type === 'Part Time' ? 18 : 36) : 36;
-    const isExceeded = totalHours > limit;
+    const defaultLimit = coach?.emp_type === 'Part Time' ? 18 : 36;
+    const limit = coach?.custom_weekly_hours_limit || defaultLimit;
+    const isExceeded = !coach?.exempt_capacity_limit && totalHours > limit;
     const pct = Math.min(100, +((totalHours / limit) * 100).toFixed(1));
-    return { totalHours, limit, isExceeded, pct };
+    return { totalHours, limit, defaultLimit, isExceeded, pct };
   }, [coachSlots, coach]);
 
   return (

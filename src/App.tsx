@@ -667,11 +667,13 @@ export function App() {
               onIgnoreConflict={handleIgnoreConflict}
               ruleConfig={ruleConfig}
               onToggleRule={(ruleKey) => setRuleConfig(prev => ({ ...prev, [ruleKey]: !prev[ruleKey] }))}
+              onUpdateCoach={handleUpdateCoach}
               onGrantCoachException={(coachName) => {
                 setActivePortal('management');
                 setActiveTab('profile');
                 const coachObj = coaches.find(c => c.name.toLowerCase() === coachName.toLowerCase() || c.display_name.toLowerCase() === coachName.toLowerCase());
                 if (coachObj) {
+                  localStorage.setItem('upstep_profile_coach_id', coachObj.id.toString());
                   localStorage.setItem('upstep_selected_coach_id', coachObj.id.toString());
                 }
               }}

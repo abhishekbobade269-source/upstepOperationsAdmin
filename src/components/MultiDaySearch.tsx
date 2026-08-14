@@ -270,7 +270,7 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
         }
       });
 
-      // Calculate current weekly active hours for weekly limit check (36h FT / 18h PT)
+      // Calculate current weekly active hours for weekly limit check (custom limit or 36h FT / 18h PT)
       let weeklyActiveMins = 0;
       const coachAllSlots = slots.filter(s => s.coach_id === coach.id);
       coachAllSlots.forEach(s => {
@@ -279,17 +279,31 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
         }
       });
       const currentWeeklyHours = +(weeklyActiveMins / 60).toFixed(1);
-      const maxWeeklyLimit = coach.emp_type === 'Part Time' ? 18 : 36;
+      const defaultWeeklyLimit = coach.emp_type === 'Part Time' ? 18 : 36;
+      const maxWeeklyLimit = coach.custom_weekly_hours_limit || defaultWeeklyLimit;
       const isWeeklyExceeded = currentWeeklyHours >= maxWeeklyLimit;
 
+      // Calculate current daily teaching hours on target day
+      let dailyActiveMins = 0;
+      todaySlots.forEach(s => {
+        if (isActiveClassSlot(s)) {
+          dailyActiveMins += getSlotDurationMinutes(s.start_time, s.end_time);
+        }
+      });
+      const currentDailyHours = +(dailyActiveMins / 60).toFixed(1);
+      const defaultDailyLimit = coach.emp_type === 'Part Time' ? 4.5 : 6.0;
+      const maxDailyLimit = coach.custom_daily_hours_limit || coach.class_hours_per_day || defaultDailyLimit;
+      const isDailyExceeded = (currentDailyHours + (matchingSlots.length * 0.75)) > maxDailyLimit;
+
       const currentDailyLoad = regularCount + (demoCount * 0.5);
-      const maxDailyClasses = coach.max_daily_classes || 8;
-      const isOverCapacity = (currentDailyLoad + matchingSlots.length) > maxDailyClasses || isWeeklyExceeded;
+      const maxDailyClasses = coach.max_daily_classes || (coach.emp_type === 'Part Time' ? 6 : 8);
+      const isOverCapacity = (currentDailyLoad + matchingSlots.length) > maxDailyClasses || isWeeklyExceeded || isDailyExceeded;
 
       // 2. Weighted Scoring Logic
       let score = 45 * matchingSlots.length; // Base overlap score
 
       if (isWeeklyExceeded) score -= 100; // Penalize coaches who reached max weekly hours limit
+      if (isDailyExceeded) score -= 80;   // Penalize coaches who exceeded daily hours limit
 
       if (language !== 'ALL' && coach.languages.toLowerCase().includes(language.toLowerCase())) {
         score += 30;
@@ -316,7 +330,13 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
         score,
         matchingSlots,
         currentDailyLoad,
+        currentDailyHours,
+        maxDailyLimit,
+        isDailyExceeded,
         isOverCapacity,
+        isWeeklyExceeded,
+        currentWeeklyHours,
+        maxWeeklyLimit,
         remainingClassCapacity: Math.max(0, maxDailyClasses - currentDailyLoad),
         remainingDemoCapacity: Math.max(0, (maxDailyClasses - currentDailyLoad) * 2)
       };
@@ -566,7 +586,7 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
             <p>No coaches match all slot requirements and filters. Try adding fewer slots, enabling "Include Purple Slots", or switching to Approx Match Mode.</p>
           </div>
         ) : (
-          scoredResults.map(({ coach, score, matchingSlots, currentDailyLoad, isOverCapacity, isWeeklyExceeded, currentWeeklyHours, maxWeeklyLimit, remainingClassCapacity, remainingDemoCapacity }: any) => (
+          scoredResults.map(({ coach, score, matchingSlots, currentDailyLoad, currentDailyHours, maxDailyLimit, isDailyExceeded, isOverCapacity, isWeeklyExceeded, currentWeeklyHours, maxWeeklyLimit, remainingClassCapacity, remainingDemoCapacity }: any) => (
             <div key={coach.id} className={`coach-result-card ${isOverCapacity ? 'over-capacity-card' : ''}`}>
               <div className="card-header">
                 <div className="coach-avatar-section">
@@ -581,7 +601,7 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
                 <div className="recommendation-badge" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
                   {isOverCapacity && (
                     <span className="badge-pill red animate-pulse" style={{ fontSize: '0.68rem', padding: '0.15rem 0.4rem', fontWeight: 800 }}>
-                      ⚠️ {isWeeklyExceeded ? `Weekly Max (${maxWeeklyLimit}h)` : 'Over Capacity Limit'}
+                      ⚠️ {isWeeklyExceeded ? `Weekly Max (${maxWeeklyLimit}h)` : isDailyExceeded ? `Daily Max (${maxDailyLimit}h)` : 'Over Capacity Limit'}
                     </span>
                   )}
                   <span className="badge-pill green" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
@@ -607,9 +627,15 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
                   </span>
                 </div>
                 <div className="info-row">
+                  <span className="label">Daily Working Hours:</span>
+                  <span className="value font-bold" style={{ color: isDailyExceeded ? 'var(--accent-red)' : 'var(--accent-green)' }}>
+                    {currentDailyHours} / {maxDailyLimit} hrs/day {isDailyExceeded && '⚠️ Daily Limit Reached'}
+                  </span>
+                </div>
+                <div className="info-row">
                   <span className="label">Daily Capacity Load:</span>
                   <span className="value font-bold" style={{ color: isOverCapacity ? 'var(--accent-red)' : 'var(--accent-green)' }}>
-                    {currentDailyLoad} / {coach.max_daily_classes || 8} classes (Capacity Left: {remainingClassCapacity} Cls | {remainingDemoCapacity} Demos)
+                    {currentDailyLoad} / {coach.max_daily_classes || (coach.emp_type === 'Part Time' ? 6 : 8)} classes (Capacity Left: {remainingClassCapacity} Cls | {remainingDemoCapacity} Demos)
                   </span>
                 </div>
 

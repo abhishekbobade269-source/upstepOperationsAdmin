@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Coach, Slot, ConflictReport, AuditRuleConfig } from '../types';
-import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Zap, Eye, Settings, Filter, X, Ban } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Zap, Eye, Settings, Filter, X, Ban, Clock } from 'lucide-react';
 import { ScheduleGrid } from './ScheduleGrid';
 import './AdminPortal.css';
 
@@ -13,6 +13,7 @@ interface ConflictAuditProps {
   ruleConfig: AuditRuleConfig;
   onToggleRule: (ruleKey: keyof AuditRuleConfig) => void;
   onGrantCoachException?: (coachName: string) => void;
+  onUpdateCoach?: (updatedCoach: Coach) => void;
   onSelectSlot: (slot: Slot) => void;
   onOpenBookingModal: (coach: Coach, day: string, startTime: string, endTime: string) => void;
 }
@@ -26,10 +27,12 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
   ruleConfig,
   onToggleRule,
   onGrantCoachException,
+  onUpdateCoach,
   onSelectSlot,
   onOpenBookingModal
 }) => {
   const [gridOverlayTarget, setGridOverlayTarget] = useState<{ coachName: string; day?: string } | null>(null);
+  const [editingCoachWorkingHours, setEditingCoachWorkingHours] = useState<Coach | null>(null);
   const activeRuleCount = Object.values(ruleConfig).filter(Boolean).length;
 
   return (
@@ -41,7 +44,7 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
         </div>
         <div className="header-text-box">
           <h2>Schedule Validation & Diagnostic Conflict Audit Engine</h2>
-          <p>Real-time system diagnostics scanning for batch overlaps, working capacity limits, consecutive session breaches, and rest break violations.</p>
+          <p>Real-time system diagnostics scanning for batch overlaps, working capacity limits, daily limits, consecutive session breaches, and rest break violations.</p>
         </div>
       </div>
 
@@ -66,7 +69,7 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
                 <ShieldCheck className="icon text-green" />
               </div>
               <div>
-                <span className="metric-title font-bold">{activeRuleCount} / 6 Validation Rules Active</span>
+                <span className="metric-title font-bold">{activeRuleCount} / 7 Validation Rules Active</span>
                 <span className="metric-desc">Click rule chips below to toggle ON / OFF</span>
               </div>
             </div>
@@ -94,6 +97,15 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
                 style={{ background: ruleConfig.enableWeeklyCapacityCheck ? 'rgba(245, 158, 11, 0.2)' : 'var(--bg-card)', border: `1px solid ${ruleConfig.enableWeeklyCapacityCheck ? '#f59e0b' : 'var(--border-color)'}`, color: ruleConfig.enableWeeklyCapacityCheck ? '#fcd34d' : 'var(--text-muted)', cursor: 'pointer' }}
               >
                 {ruleConfig.enableWeeklyCapacityCheck ? '⏱️ Weekly Capacity Limit (ON)' : '⏱️ Weekly Capacity Limit (OFF)'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onToggleRule('enableDailyCapacityCheck')}
+                className={`chip-btn ${ruleConfig.enableDailyCapacityCheck !== false ? 'active' : ''}`}
+                style={{ background: ruleConfig.enableDailyCapacityCheck !== false ? 'rgba(234, 179, 8, 0.2)' : 'var(--bg-card)', border: `1px solid ${ruleConfig.enableDailyCapacityCheck !== false ? '#eab308' : 'var(--border-color)'}`, color: ruleConfig.enableDailyCapacityCheck !== false ? '#fef08a' : 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                {ruleConfig.enableDailyCapacityCheck !== false ? '📅 Daily Hours Limit (ON)' : '📅 Daily Hours Limit (OFF)'}
               </button>
 
               <button
@@ -143,7 +155,7 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
             <CheckCircle2 className="icon-lg text-green" style={{ margin: '0 auto 1rem auto', width: '48px', height: '48px' }} />
             <h3 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem' }}>All Systems Operational — 0 Conflicts Flagged</h3>
             <p className="text-muted" style={{ fontSize: '0.88rem', maxWidth: '500px', margin: '0 auto' }}>
-              All coach schedules satisfy active validation rules. You can toggle validation rules or grant special trainer overrides anytime.
+              All coach schedules satisfy active validation rules. You can edit coach working hours or toggle validation rules anytime.
             </p>
           </div>
         ) : (
@@ -182,6 +194,23 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
                   >
                     <Eye className="icon-sm" /> View & Highlight in Grid Overlay
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const coachObj = coaches.find(c => c.name.toLowerCase() === conf.coach_name.toLowerCase() || c.display_name.toLowerCase() === conf.coach_name.toLowerCase());
+                      if (coachObj) {
+                        setEditingCoachWorkingHours({ ...coachObj });
+                      } else if (onGrantCoachException) {
+                        onGrantCoachException(conf.coach_name);
+                      }
+                    }}
+                    className="btn-secondary"
+                    style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem', borderColor: '#10b981', color: '#6ee7b7' }}
+                  >
+                    <Clock className="icon-sm" /> ⚡ Set Working Hours Limits
+                  </button>
+
                   {onGrantCoachException && (
                     <button
                       type="button"
@@ -217,6 +246,200 @@ export const ConflictAudit: React.FC<ConflictAuditProps> = ({
           ))
         )}
       </div>
+
+      {/* QUICK EDIT MODAL: Working Hours & Capacity Limits Settings */}
+      {editingCoachWorkingHours && (
+        <div className="modal-overlay" style={{ zIndex: 11000, padding: '1rem' }}>
+          <div 
+            className="card-glass shadow-2xl" 
+            style={{ 
+              width: '92vw', 
+              maxWidth: '620px', 
+              background: 'var(--bg-card)', 
+              border: '1px solid var(--accent-gold)', 
+              borderRadius: '16px',
+              padding: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Clock className="icon-gold" />
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>
+                    Configure Working Hours: <span style={{ color: 'var(--accent-gold)' }}>{editingCoachWorkingHours.display_name}</span>
+                  </h3>
+                  <span className="text-muted" style={{ fontSize: '0.8rem' }}>
+                    {editingCoachWorkingHours.emp_type} ({editingCoachWorkingHours.shift_type || 'Day Shift'}) — Limits apply to capacity conflicts & Multi-Day Finder in real-time.
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingCoachWorkingHours(null)}
+                className="btn-secondary"
+                style={{ padding: '0.35rem 0.65rem', borderColor: '#ef4444', color: '#fca5a5' }}
+              >
+                <X className="icon-sm" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (onUpdateCoach) {
+                  onUpdateCoach(editingCoachWorkingHours);
+                }
+                setEditingCoachWorkingHours(null);
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label font-bold">
+                    Weekly Hours Limit (hrs/week):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="80"
+                    value={editingCoachWorkingHours.custom_weekly_hours_limit ?? (editingCoachWorkingHours.emp_type === 'Part Time' ? 18 : 36)}
+                    onChange={e => setEditingCoachWorkingHours({
+                      ...editingCoachWorkingHours,
+                      custom_weekly_hours_limit: parseFloat(e.target.value) || 0
+                    })}
+                    className="text-input"
+                    required
+                  />
+                  <span className="text-muted" style={{ fontSize: '0.73rem' }}>
+                    Default: {editingCoachWorkingHours.emp_type === 'Part Time' ? '18 hrs' : '36 hrs'}
+                  </span>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label font-bold">
+                    Daily Hours Limit (hrs/day):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="24"
+                    value={editingCoachWorkingHours.custom_daily_hours_limit ?? (editingCoachWorkingHours.class_hours_per_day || (editingCoachWorkingHours.emp_type === 'Part Time' ? 4.5 : 6.0))}
+                    onChange={e => setEditingCoachWorkingHours({
+                      ...editingCoachWorkingHours,
+                      custom_daily_hours_limit: parseFloat(e.target.value) || 0,
+                      class_hours_per_day: parseFloat(e.target.value) || 0
+                    })}
+                    className="text-input"
+                    required
+                  />
+                  <span className="text-muted" style={{ fontSize: '0.73rem' }}>
+                    Default: {editingCoachWorkingHours.emp_type === 'Part Time' ? '4.5 hrs' : '6.0 hrs'}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="form-label font-bold">
+                    Max Daily Classes:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={editingCoachWorkingHours.max_daily_classes || (editingCoachWorkingHours.emp_type === 'Part Time' ? 6 : 8)}
+                    onChange={e => setEditingCoachWorkingHours({
+                      ...editingCoachWorkingHours,
+                      max_daily_classes: parseInt(e.target.value, 10) || 8
+                    })}
+                    className="text-input"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label font-bold">
+                    Employment Type:
+                  </label>
+                  <select
+                    value={editingCoachWorkingHours.emp_type}
+                    onChange={e => setEditingCoachWorkingHours({
+                      ...editingCoachWorkingHours,
+                      emp_type: e.target.value as any
+                    })}
+                    className="select-input"
+                  >
+                    <option value="Part Time">Part Time</option>
+                    <option value="Full Time">Full Time</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span className="font-bold" style={{ fontSize: '0.82rem', color: 'var(--accent-gold)' }}>Operational Exceptions:</span>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!editingCoachWorkingHours.exempt_capacity_limit}
+                    onChange={e => setEditingCoachWorkingHours({
+                      ...editingCoachWorkingHours,
+                      exempt_capacity_limit: e.target.checked
+                    })}
+                  />
+                  <span>Exempt from Weekly & Daily Capacity Limit checks</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!editingCoachWorkingHours.exempt_consecutive_limit}
+                    onChange={e => setEditingCoachWorkingHours({
+                      ...editingCoachWorkingHours,
+                      exempt_consecutive_limit: e.target.checked
+                    })}
+                  />
+                  <span>Exempt from Max 4 Consecutive Classes rule</span>
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label font-bold">Special Notes / Reason for Custom Hours:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Approved overtime agreement, special contract..."
+                  value={editingCoachWorkingHours.special_exception_notes || ''}
+                  onChange={e => setEditingCoachWorkingHours({
+                    ...editingCoachWorkingHours,
+                    special_exception_notes: e.target.value
+                  })}
+                  className="text-input"
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingCoachWorkingHours(null)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                >
+                  <Zap className="icon-sm" /> Save Working Hours & Recalculate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* OVERLAY MODAL: Highlighted Schedule Grid pop-up within Conflict Audit */}
       {gridOverlayTarget && (
