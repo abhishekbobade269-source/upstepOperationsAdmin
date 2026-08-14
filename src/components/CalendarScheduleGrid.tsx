@@ -169,7 +169,7 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
     const st = resolved.status_type;
     if (st === 'REST_BREAK' || st === 'OFF_DUTY' || act === 'OFF' || act.includes('MEAL BREAK')) return 'slot-cell status-red-break';
     if (st === 'BATCH_LEVEL_BREAK' || st === 'INACTIVE' || act.includes('INACTIVE') || act.includes('LEVEL BREAK') || act === 'BREAK') return 'slot-cell status-purple-break';
-    if (st === 'REQUIREMENT_BLOCK' || act.includes('REQUIREMENT BLOCK') || act.includes('REQ BLOCK')) return 'slot-cell status-yellow-req';
+    if (st === 'REQUIREMENT_BLOCK' || act.includes('REQUIREMENT BLOCK') || act.includes('REQ BLOCK') || act.includes('BLOCK')) return 'slot-cell status-yellow-req';
     if (st === 'NEXT_MONTH_BLOCK' || act.includes('NEXT MONTH BLOCK') || act.includes('NEXT MONTH')) return 'slot-cell status-cyan-nextmonth';
     if (st === 'ODD_SLOT' || act.includes('ODD SLOT')) return 'slot-cell status-magenta-odd';
     if (st === 'TRAINING') return 'slot-cell status-mauve-training';
@@ -178,8 +178,9 @@ export const CalendarScheduleGrid: React.FC<CalendarScheduleGridProps> = ({
     if (st === 'NOTICE_PERIOD' || act.includes('NOTICE PERIOD')) return 'slot-cell status-green-notice';
     if (st === 'REPORT_BUILDING' || act.includes('REPORT-BUILDING')) return 'slot-cell status-olive-report';
     if (st === 'CLASSES_NEED_TO_BE_MANAGED' || act.includes('MANAGED')) return 'slot-cell status-teal-managed';
-    if (st === 'TEMPORARY_CLASS' || st === 'SUBSTITUTE_CLASS' || act.includes('X TEMPORARY')) return 'slot-cell status-orange-temp';
-    if (st === 'SCHEDULED_CLASS' || st === 'DEMO_CLASS' || act.includes('DEMO')) return 'slot-cell status-green-class';
+    if (st === 'TEMPORARY_CLASS' || act.includes('TEMPORARY') || act.includes('TEMP CLASS')) return 'slot-cell status-orange-temp';
+    if (st === 'DEMO_CLASS' || act.includes('DEMO')) return 'slot-cell status-green-class';
+    if (st === 'SCHEDULED_CLASS') return 'slot-cell status-green-class';
     return 'slot-cell status-blue-available';
   }, []);
 

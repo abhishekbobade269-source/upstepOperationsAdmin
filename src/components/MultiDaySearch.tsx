@@ -11,8 +11,8 @@ interface MultiDaySearchProps {
 
 const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-import { isNightShiftCoach, getAdjustedSlotDay, isTemporaryOrDemo, timeToMinutes } from '../utils/shiftUtils';
-import { isActiveClassSlot, getSlotDurationMinutes } from '../utils/conflictDetector';
+import { isNightShiftCoach, getAdjustedSlotDay, timeToMinutes } from '../utils/shiftUtils';
+import { getSlotDurationMinutes, isClassGivenSlot, isDemoOrTemporarySlot } from '../utils/conflictDetector';
 
 export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
   coaches,
@@ -257,11 +257,8 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
       });
 
       todaySlots.forEach(s => {
-        const isClass = s.status_type === 'SCHEDULED_CLASS' && !isTemporaryOrDemo(s.activity);
-        const isTempOrDemo = s.status_type === 'DEMO_CLASS' || 
-                             s.status_type === 'TEMPORARY_CLASS' || 
-                             s.status_type === 'SUBSTITUTE_CLASS' ||
-                             (s.status_type === 'SCHEDULED_CLASS' && isTemporaryOrDemo(s.activity));
+        const isClass = isClassGivenSlot(s);
+        const isTempOrDemo = isDemoOrTemporarySlot(s);
 
         if (isClass) {
           regularCount++;
@@ -274,7 +271,7 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
       let weeklyActiveMins = 0;
       const coachAllSlots = slots.filter(s => s.coach_id === coach.id);
       coachAllSlots.forEach(s => {
-        if (isActiveClassSlot(s)) {
+        if (isClassGivenSlot(s)) {
           weeklyActiveMins += getSlotDurationMinutes(s.start_time, s.end_time);
         }
       });
@@ -286,7 +283,7 @@ export const MultiDaySearch: React.FC<MultiDaySearchProps> = ({
       // Calculate current daily teaching hours on target day
       let dailyActiveMins = 0;
       todaySlots.forEach(s => {
-        if (isActiveClassSlot(s)) {
+        if (isClassGivenSlot(s)) {
           dailyActiveMins += getSlotDurationMinutes(s.start_time, s.end_time);
         }
       });

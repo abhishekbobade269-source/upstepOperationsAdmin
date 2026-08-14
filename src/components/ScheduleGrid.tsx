@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Slot, Coach, ConflictReport } from '../types';
 import { Search, AlertTriangle } from 'lucide-react';
-import { isTemporaryOrDemo, timeToMinutes } from '../utils/shiftUtils';
+import { timeToMinutes } from '../utils/shiftUtils';
 import { isTrainerOrHeadTrainer } from '../utils/trainerUtils';
 
 interface ScheduleGridProps {
@@ -130,7 +130,7 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
       baseClass = 'slot-cell status-red-break';
     } else if (st === 'BATCH_LEVEL_BREAK' || st === 'INACTIVE' || act.includes('INACTIVE') || act.includes('LEVEL BREAK') || act === 'BREAK') {
       baseClass = 'slot-cell status-purple-break';
-    } else if (st === 'REQUIREMENT_BLOCK' || act.includes('REQUIREMENT BLOCK') || act.includes('REQ BLOCK')) {
+    } else if (st === 'REQUIREMENT_BLOCK' || act.includes('REQUIREMENT BLOCK') || act.includes('REQ BLOCK') || act.includes('BLOCK')) {
       baseClass = 'slot-cell status-yellow-req';
     } else if (st === 'NEXT_MONTH_BLOCK' || act.includes('NEXT MONTH BLOCK') || act.includes('NEXT MONTH')) {
       baseClass = 'slot-cell status-cyan-nextmonth';
@@ -148,17 +148,12 @@ export const ScheduleGrid: React.FC<ScheduleGridProps> = ({
       baseClass = 'slot-cell status-olive-report';
     } else if (st === 'CLASSES_NEED_TO_BE_MANAGED' || act.includes('CLASSES NEED TO BE MANAGED') || act.includes('NEED TO BE MANAGED') || act.includes('MANAGED')) {
       baseClass = 'slot-cell status-teal-managed';
-    } else {
-      const isTemp = st === 'TEMPORARY_CLASS' || 
-                     st === 'SUBSTITUTE_CLASS' || 
-                     act.includes('X TEMPORARY') ||
-                     (st === 'SCHEDULED_CLASS' && isTemporaryOrDemo(slot.activity) && !act.includes('DEMO'));
-
-      if (isTemp) {
-        baseClass = 'slot-cell status-orange-temp';
-      } else if (st === 'SCHEDULED_CLASS' || st === 'DEMO_CLASS' || act.includes('DEMO')) {
-        baseClass = 'slot-cell status-green-class';
-      }
+    } else if (st === 'TEMPORARY_CLASS' || act.includes('TEMPORARY') || act.includes('TEMP CLASS')) {
+      baseClass = 'slot-cell status-orange-temp';
+    } else if (st === 'DEMO_CLASS' || act.includes('DEMO')) {
+      baseClass = 'slot-cell status-green-class';
+    } else if (st === 'SCHEDULED_CLASS') {
+      baseClass = 'slot-cell status-green-class';
     }
 
     // Highlight cell if coach has an active conflict or matches highlighted target

@@ -14,8 +14,8 @@ interface CoachProfileProps {
   onDeleteSlotsRow: (coachId: number, startTime: string) => void;
 }
 
-import { isTemporaryOrDemo, timeToMinutes } from '../utils/shiftUtils';
-import { isActiveClassSlot, getSlotDurationMinutes } from '../utils/conflictDetector';
+import { timeToMinutes } from '../utils/shiftUtils';
+import { getSlotDurationMinutes, isClassGivenSlot, isBlockedSlot, isDemoOrTemporarySlot } from '../utils/conflictDetector';
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -138,7 +138,7 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
     if (st === 'BATCH_LEVEL_BREAK' || st === 'INACTIVE' || act.includes('INACTIVE') || act.includes('LEVEL BREAK') || act === 'BREAK') {
       return 'slot-cell status-purple-break';
     }
-    if (st === 'REQUIREMENT_BLOCK' || act.includes('REQUIREMENT BLOCK') || act.includes('REQ BLOCK')) {
+    if (st === 'REQUIREMENT_BLOCK' || act.includes('REQUIREMENT BLOCK') || act.includes('REQ BLOCK') || act.includes('BLOCK')) {
       return 'slot-cell status-yellow-req';
     }
     if (st === 'NEXT_MONTH_BLOCK' || act.includes('NEXT MONTH BLOCK') || act.includes('NEXT MONTH')) {
@@ -166,16 +166,15 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
       return 'slot-cell status-teal-managed';
     }
 
-    const isTemp = st === 'TEMPORARY_CLASS' || 
-                   st === 'SUBSTITUTE_CLASS' || 
-                   act.includes('X TEMPORARY') ||
-                   (st === 'SCHEDULED_CLASS' && isTemporaryOrDemo(slot.activity) && !act.includes('DEMO'));
-
-    if (isTemp) {
+    if (st === 'TEMPORARY_CLASS' || act.includes('TEMPORARY') || act.includes('TEMP CLASS')) {
       return 'slot-cell status-orange-temp';
     }
 
-    if (st === 'SCHEDULED_CLASS' || st === 'DEMO_CLASS' || act.includes('DEMO')) {
+    if (st === 'DEMO_CLASS' || act.includes('DEMO')) {
+      return 'slot-cell status-green-class';
+    }
+
+    if (st === 'SCHEDULED_CLASS') {
       return 'slot-cell status-green-class';
     }
 
@@ -193,20 +192,30 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
     let freeSlots = 0;
 
     coachSlots.forEach(s => {
-      const actualStatus = (s.status_type === 'SCHEDULED_CLASS' && isTemporaryOrDemo(s.activity)) 
-        ? 'TEMPORARY_CLASS' 
-        : s.status_type;
-
-      switch (actualStatus) {
-        case 'SCHEDULED_CLASS': scheduledClasses++; break;
-        case 'DEMO_CLASS': demoSlots++; break;
-        case 'SUBSTITUTE_CLASS': substituteSlots++; break;
-        case 'TEMPORARY_CLASS': tempClasses++; break;
-        case 'BATCH_LEVEL_BREAK':
-        case 'INACTIVE': levelBreaks++; break;
-        case 'REST_BREAK':
-        case 'OFF_DUTY': restBreaks++; break;
-        case 'AVAILABLE': freeSlots++; break;
+      const act = (s.activity || '').toUpperCase().trim();
+      if (isBlockedSlot(s)) {
+        // Blocked slots (Requirement Block, X Ganesh Block, etc.)
+        scheduledClasses++;
+      } else if (isDemoOrTemporarySlot(s)) {
+        if (s.status_type === 'DEMO_CLASS' || act.includes('DEMO')) {
+          demoSlots++;
+        } else {
+          tempClasses++;
+        }
+      } else {
+        const actualStatus = s.status_type;
+        switch (actualStatus) {
+          case 'SCHEDULED_CLASS': scheduledClasses++; break;
+          case 'DEMO_CLASS': demoSlots++; break;
+          case 'SUBSTITUTE_CLASS': substituteSlots++; break;
+          case 'TEMPORARY_CLASS': tempClasses++; break;
+          case 'BATCH_LEVEL_BREAK':
+          case 'INACTIVE': levelBreaks++; break;
+          case 'REST_BREAK':
+          case 'OFF_DUTY': restBreaks++; break;
+          case 'AVAILABLE': freeSlots++; break;
+          default: freeSlots++; break;
+        }
       }
     });
 
@@ -216,7 +225,7 @@ export const CoachProfile: React.FC<CoachProfileProps> = ({
   const weeklyHoursInfo = useMemo(() => {
     let activeMins = 0;
     coachSlots.forEach(s => {
-      if (isActiveClassSlot(s)) {
+      if (isClassGivenSlot(s)) {
         activeMins += getSlotDurationMinutes(s.start_time, s.end_time);
       }
     });

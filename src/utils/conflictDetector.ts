@@ -18,92 +18,146 @@ export function getSlotDurationMinutes(startTime: string, endTime: string): numb
   return e - s;
 }
 
-export function isPermanentClassSlot(slot: Slot): boolean {
+/**
+ * Check if a slot is blocked by manager comment (e.g. 'X Ganesh Block', 'Requirement Block', 'Next Month Block', etc.)
+ * Blocked slots consume the coach's capacity and ARE added to classes given / working hours limits.
+ */
+export function isBlockedSlot(slot: Slot | { activity?: string; status_type?: string }): boolean {
   if (!slot) return false;
-  const st = slot.status_type;
   const act = (slot.activity || '').trim().toUpperCase();
-
-  // 1. Anything starting with 'X' or 'x' is not a permanent class (e.g. X Demo, X Temporary, X, X Expired, X Block, etc.)
-  if (!act || act.startsWith('X') || isTemporaryOrDemo(slot.activity)) {
-    return false;
-  }
-
-  // 2. Non-permanent or break status types
-  if (
-    st === 'DEMO_CLASS' ||
-    st === 'TEMPORARY_CLASS' ||
-    st === 'REST_BREAK' ||
-    st === 'OFF_DUTY' ||
-    st === 'REPORT_BUILDING' ||
-    st === 'BATCH_LEVEL_BREAK' ||
-    st === 'INACTIVE' ||
-    st === 'AVAILABLE' ||
-    st === 'REQUIREMENT_BLOCK' ||
-    st === 'NEXT_MONTH_BLOCK' ||
-    st === 'ODD_SLOT' ||
-    st === 'TRAINING' ||
-    st === 'NOTICE_PERIOD'
-  ) {
-    return false;
-  }
-
-  // 3. Operational or break activities
-  if (
-    act === 'OFF' ||
-    act === 'BREAK' ||
-    act.includes('MEAL BREAK') ||
-    act.includes('LEVEL BREAK') ||
-    act.includes('INACTIVE') ||
-    act.includes('REPORT-BUILDING') ||
-    act.includes('REPORT BUILDING') ||
-    act.includes('TRAINING') ||
-    act.includes('REQUIREMENT BLOCK') ||
-    act.includes('NEXT MONTH') ||
-    act.includes('ODD SLOT') ||
-    act.includes('DEMO') ||
-    act.includes('TEMPORARY') ||
-    act.includes('EXPIRED')
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
-export function isActiveClassSlot(slot: Slot): boolean {
-  if (!slot) return false;
   const st = slot.status_type;
-  const act = (slot.activity || '').trim().toUpperCase();
 
   if (
-    st === 'REST_BREAK' ||
-    st === 'OFF_DUTY' ||
-    st === 'REPORT_BUILDING' ||
-    st === 'BATCH_LEVEL_BREAK' ||
-    st === 'INACTIVE' ||
-    st === 'AVAILABLE' ||
     st === 'REQUIREMENT_BLOCK' ||
     st === 'NEXT_MONTH_BLOCK' ||
     st === 'ODD_SLOT' ||
     st === 'TRAINING' ||
     st === 'NOTICE_PERIOD' ||
+    st === 'PERMANENT_SUBSTITUTE' ||
+    st === 'LONG_LEAVE_SUBSTITUTE' ||
+    st === 'CLASSES_NEED_TO_BE_MANAGED' ||
+    st === 'REPORT_BUILDING'
+  ) {
+    return true;
+  }
+
+  if (
+    act.includes('BLOCK') ||
+    act.includes('TRAINING') ||
+    act.includes('REQUIREMENT') ||
+    act.includes('NEXT MONTH') ||
+    act.includes('ODD SLOT') ||
+    act.includes('NOTICE PERIOD') ||
+    act.includes('PERMANENT SUBSTITUTE') ||
+    act.includes('PERM SUB') ||
+    act.includes('LONG LEAVE') ||
+    act.includes('MANAGED') ||
+    act.includes('REPORT-BUILDING') ||
+    act.includes('REPORT BUILDING')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if a slot is an available demo / temporary slot (e.g. 'X Demo', 'X Temporary Class', 'X', 'AVAILABLE').
+ * These slots are reserved for demos / temp classes and must NOT be counted towards classes given / working capacity limits.
+ */
+export function isDemoOrTemporarySlot(slot: Slot | { activity?: string; status_type?: string }): boolean {
+  if (!slot) return false;
+  const act = (slot.activity || '').trim().toUpperCase();
+  const st = slot.status_type;
+
+  // Blocked slots take precedence over generic demo/temp matching
+  if (isBlockedSlot(slot)) return false;
+
+  if (
+    st === 'DEMO_CLASS' ||
+    st === 'TEMPORARY_CLASS' ||
+    st === 'AVAILABLE' ||
     act === 'X' ||
+    act === 'X DEMO' ||
+    act === 'DEMO' ||
+    act.startsWith('X DEMO') ||
+    act.includes('TEMPORARY') ||
+    act.includes('TEMP CLASS') ||
+    act === 'X (EXPIRED)' ||
+    act === 'AVAILABLE'
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if a slot counts towards the coach's class giving / working hours capacity limit.
+ * - Classes (e.g. 'AUS-FPI-1506') AND Blocked slots (e.g. 'X Ganesh Block', 'Requirement Block') ARE counted.
+ * - Demos / Temporary available slots ('X Demo', 'X Temporary Class', 'X') and Breaks/Off DO NOT count.
+ */
+export function isClassGivenSlot(slot: Slot | { activity?: string; status_type?: string }): boolean {
+  if (!slot) return false;
+  const act = (slot.activity || '').trim().toUpperCase();
+  const st = slot.status_type;
+
+  if (!act) return false;
+
+  // 1. Breaks & Off-duty NEVER count towards classes given
+  if (
+    st === 'REST_BREAK' ||
+    st === 'OFF_DUTY' ||
+    st === 'BATCH_LEVEL_BREAK' ||
+    st === 'INACTIVE' ||
     act === 'OFF' ||
     act === 'BREAK' ||
     act.includes('MEAL BREAK') ||
     act.includes('LEVEL BREAK') ||
-    act.includes('INACTIVE') ||
-    act.includes('REPORT-BUILDING') ||
-    act.includes('REPORT BUILDING') ||
-    act.includes('TRAINING') ||
-    act.includes('REQUIREMENT BLOCK') ||
-    act.includes('NEXT MONTH') ||
-    act.includes('ODD SLOT') ||
-    act === 'X (EXPIRED)'
+    act.includes('INACTIVE')
   ) {
     return false;
   }
+
+  // 2. Blocked slots (e.g. "X Ganesh Block", "Requirement Block", "Training", "Report-building time") DO count towards classes given!
+  if (isBlockedSlot(slot)) {
+    return true;
+  }
+
+  // 3. Demo / Temporary available slots ("X Demo", "X Temporary", "X", "AVAILABLE") DO NOT count towards classes given!
+  if (isDemoOrTemporarySlot(slot)) {
+    return false;
+  }
+
+  // 4. Any other unassigned slot starting with 'X' that is not a block is an open slot
+  if (act === 'X' || (act.startsWith('X') && !act.includes('BLOCK'))) {
+    return false;
+  }
+
+  // 5. Active scheduled batch class (e.g. AUS-FPI-1506, IND-RG-1210, etc.)
   return true;
+}
+
+/**
+ * Check if a slot is an active permanent batch class (for max 4 consecutive sessions rule).
+ * Demos, temporary classes, blocked slots, and breaks reset the consecutive permanent streak.
+ */
+export function isPermanentClassSlot(slot: Slot): boolean {
+  if (!slot) return false;
+  const act = (slot.activity || '').trim().toUpperCase();
+
+  if (!isClassGivenSlot(slot)) return false;
+  if (isBlockedSlot(slot)) return false;
+  if (act.startsWith('X') || isTemporaryOrDemo(slot.activity)) return false;
+
+  return true;
+}
+
+/**
+ * Active slot for overlap checks
+ */
+export function isActiveClassSlot(slot: Slot): boolean {
+  return isClassGivenSlot(slot);
 }
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
@@ -268,7 +322,7 @@ export function detectScheduleConflicts(
       if (ruleConfig.enableDailyCapacityCheck && !isCapacityExempt) {
         let dailyTeachingMins = 0;
         run.slots.forEach(s => {
-          if (isPermanentClassSlot(s)) {
+          if (isClassGivenSlot(s)) {
             dailyTeachingMins += getSlotDurationMinutes(s.start_time, s.end_time);
           }
         });
