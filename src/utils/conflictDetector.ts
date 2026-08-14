@@ -1,5 +1,5 @@
 import type { Slot, Coach, ConflictReport, AuditRuleConfig } from '../types';
-import { timeToMinutes, isNightShiftCoach } from './shiftUtils';
+import { timeToMinutes, isNightShiftCoach, isTemporaryOrDemo } from './shiftUtils';
 
 export const DEFAULT_RULE_CONFIG: AuditRuleConfig = {
   enableOverlapCheck: true,
@@ -15,6 +15,58 @@ export function getSlotDurationMinutes(startTime: string, endTime: string): numb
   let e = timeToMinutes(endTime);
   if (e <= s) e += 24 * 60; // Overnight slot
   return e - s;
+}
+
+export function isPermanentClassSlot(slot: Slot): boolean {
+  if (!slot) return false;
+  const st = slot.status_type;
+  const act = (slot.activity || '').trim().toUpperCase();
+
+  // 1. Anything starting with 'X' or 'x' is not a permanent class (e.g. X Demo, X Temporary, X, X Expired, X Block, etc.)
+  if (!act || act.startsWith('X') || isTemporaryOrDemo(slot.activity)) {
+    return false;
+  }
+
+  // 2. Non-permanent or break status types
+  if (
+    st === 'DEMO_CLASS' ||
+    st === 'TEMPORARY_CLASS' ||
+    st === 'REST_BREAK' ||
+    st === 'OFF_DUTY' ||
+    st === 'REPORT_BUILDING' ||
+    st === 'BATCH_LEVEL_BREAK' ||
+    st === 'INACTIVE' ||
+    st === 'AVAILABLE' ||
+    st === 'REQUIREMENT_BLOCK' ||
+    st === 'NEXT_MONTH_BLOCK' ||
+    st === 'ODD_SLOT' ||
+    st === 'TRAINING' ||
+    st === 'NOTICE_PERIOD'
+  ) {
+    return false;
+  }
+
+  // 3. Operational or break activities
+  if (
+    act === 'OFF' ||
+    act === 'BREAK' ||
+    act.includes('MEAL BREAK') ||
+    act.includes('LEVEL BREAK') ||
+    act.includes('INACTIVE') ||
+    act.includes('REPORT-BUILDING') ||
+    act.includes('REPORT BUILDING') ||
+    act.includes('TRAINING') ||
+    act.includes('REQUIREMENT BLOCK') ||
+    act.includes('NEXT MONTH') ||
+    act.includes('ODD SLOT') ||
+    act.includes('DEMO') ||
+    act.includes('TEMPORARY') ||
+    act.includes('EXPIRED')
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 export function isActiveClassSlot(slot: Slot): boolean {
@@ -217,11 +269,11 @@ export function detectScheduleConflicts(
       let streakStartSlot: Slot | null = null;
 
       run.slots.forEach((s) => {
-        if (isActiveClassSlot(s)) {
+        if (isPermanentClassSlot(s)) {
           const sDur = getSlotDurationMinutes(s.start_time, s.end_time);
 
-          // Check if contiguous with previous slot or if there was an off-duty gap
-          if (prevSlot && isActiveClassSlot(prevSlot)) {
+          // Check if contiguous with previous permanent slot or if there was an off-duty / demo gap
+          if (prevSlot && isPermanentClassSlot(prevSlot)) {
             const prevEndMins = timeToMinutes(prevSlot.end_time);
             const sStartMins = timeToMinutes(s.start_time);
             let gap = sStartMins - prevEndMins;
@@ -233,26 +285,26 @@ export function detectScheduleConflicts(
               continuousTeachingMins = sDur;
               streakStartSlot = s;
             } else {
-              // Contiguous back-to-back class
+              // Contiguous back-to-back permanent class
               consecutiveSessionsCount++;
               continuousTeachingMins += sDur;
             }
           } else {
-            // First class after a break slot, non-teaching slot, or start of shift
+            // First permanent class after a demo slot, temporary slot, break slot, or start of shift
             consecutiveSessionsCount = 1;
             continuousTeachingMins = sDur;
             streakStartSlot = s;
           }
 
-          // Check consecutive session limit (> 4 back-to-back classes)
-          // Rule: Max 4 consecutive sessions allowed. 5+ consecutive classes without break is a conflict.
+          // Check consecutive permanent session limit (> 4 back-to-back classes)
+          // Rule: Max 4 consecutive permanent sessions allowed. 5+ consecutive classes without break is a conflict.
           if (ruleConfig.enableConsecutiveSessionsCheck && !isConsecutiveExempt && consecutiveSessionsCount === 5) {
             conflicts.push({
               id: `conf-consec-${counter++}`,
               type: 'CONSECUTIVE_SESSIONS_BREACH',
               coach_name: coachName,
               day: run.shiftDay,
-              description: `Exceeded maximum 4 consecutive sessions without a break! 5+ back-to-back classes detected starting at ${streakStartSlot?.start_time || s.start_time} on ${run.shiftDay} ${run.isNightShift ? 'Night Shift' : 'Shift'}.`,
+              description: `Exceeded maximum 4 consecutive permanent sessions without a break! 5+ back-to-back permanent classes detected starting at ${streakStartSlot?.start_time || s.start_time} on ${run.shiftDay} ${run.isNightShift ? 'Night Shift' : 'Shift'}.`,
               slot1: `Class ${s.start_time} - ${s.end_time} (${s.activity})`
             });
           }
@@ -269,7 +321,7 @@ export function detectScheduleConflicts(
             });
           }
         } else {
-          // Reset continuous counts on break / non-teaching slot
+          // Reset continuous counts on break / non-permanent / demo slot (e.g. X Demo, X, BREAK, OFF)
           consecutiveSessionsCount = 0;
           continuousTeachingMins = 0;
           streakStartSlot = null;
