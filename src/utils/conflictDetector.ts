@@ -27,6 +27,16 @@ export function isBlockedSlot(slot: Slot | { activity?: string; status_type?: st
   const act = (slot.activity || '').trim().toUpperCase();
   const st = slot.status_type;
 
+  // Report building time is administrative prep time (same as X Demo / X Temporary - does not count towards class limit)
+  if (
+    st === 'REPORT_BUILDING' ||
+    act.includes('REPORT-BUILDING') ||
+    act.includes('REPORT BUILDING') ||
+    act.includes('REPORT')
+  ) {
+    return false;
+  }
+
   if (
     st === 'REQUIREMENT_BLOCK' ||
     st === 'NEXT_MONTH_BLOCK' ||
@@ -35,8 +45,7 @@ export function isBlockedSlot(slot: Slot | { activity?: string; status_type?: st
     st === 'NOTICE_PERIOD' ||
     st === 'PERMANENT_SUBSTITUTE' ||
     st === 'LONG_LEAVE_SUBSTITUTE' ||
-    st === 'CLASSES_NEED_TO_BE_MANAGED' ||
-    st === 'REPORT_BUILDING'
+    st === 'CLASSES_NEED_TO_BE_MANAGED'
   ) {
     return true;
   }
@@ -51,9 +60,7 @@ export function isBlockedSlot(slot: Slot | { activity?: string; status_type?: st
     act.includes('PERMANENT SUBSTITUTE') ||
     act.includes('PERM SUB') ||
     act.includes('LONG LEAVE') ||
-    act.includes('MANAGED') ||
-    act.includes('REPORT-BUILDING') ||
-    act.includes('REPORT BUILDING')
+    act.includes('MANAGED')
   ) {
     return true;
   }
@@ -62,8 +69,8 @@ export function isBlockedSlot(slot: Slot | { activity?: string; status_type?: st
 }
 
 /**
- * Check if a slot is an available demo / temporary slot (e.g. 'X Demo', 'X Temporary Class', 'X', 'AVAILABLE').
- * These slots are reserved for demos / temp classes and must NOT be counted towards classes given / working capacity limits.
+ * Check if a slot is an available demo / temporary slot (e.g. 'X Demo', 'X Temporary Class', 'Report-building time', 'X', 'AVAILABLE').
+ * These slots are reserved for demos / temp classes / prep and must NOT be counted towards classes given / working capacity limits.
  */
 export function isDemoOrTemporarySlot(slot: Slot | { activity?: string; status_type?: string }): boolean {
   if (!slot) return false;
@@ -77,12 +84,16 @@ export function isDemoOrTemporarySlot(slot: Slot | { activity?: string; status_t
     st === 'DEMO_CLASS' ||
     st === 'TEMPORARY_CLASS' ||
     st === 'AVAILABLE' ||
+    st === 'REPORT_BUILDING' ||
     act === 'X' ||
     act === 'X DEMO' ||
     act === 'DEMO' ||
     act.startsWith('X DEMO') ||
     act.includes('TEMPORARY') ||
     act.includes('TEMP CLASS') ||
+    act.includes('REPORT-BUILDING') ||
+    act.includes('REPORT BUILDING') ||
+    act.includes('REPORT') ||
     act === 'X (EXPIRED)' ||
     act === 'AVAILABLE'
   ) {
@@ -95,7 +106,7 @@ export function isDemoOrTemporarySlot(slot: Slot | { activity?: string; status_t
 /**
  * Check if a slot counts towards the coach's class giving / working hours capacity limit.
  * - Classes (e.g. 'AUS-FPI-1506') AND Blocked slots (e.g. 'X Ganesh Block', 'Requirement Block') ARE counted.
- * - Demos / Temporary available slots ('X Demo', 'X Temporary Class', 'X') and Breaks/Off DO NOT count.
+ * - Demos / Temporary available slots ('X Demo', 'X Temporary Class', 'X') and Breaks/Off/Report-building DO NOT count.
  */
 export function isClassGivenSlot(slot: Slot | { activity?: string; status_type?: string }): boolean {
   if (!slot) return false;
@@ -104,27 +115,31 @@ export function isClassGivenSlot(slot: Slot | { activity?: string; status_type?:
 
   if (!act) return false;
 
-  // 1. Breaks & Off-duty NEVER count towards classes given
+  // 1. Breaks, Off-duty, and Report-building time NEVER count towards classes given
   if (
     st === 'REST_BREAK' ||
     st === 'OFF_DUTY' ||
+    st === 'REPORT_BUILDING' ||
     st === 'BATCH_LEVEL_BREAK' ||
     st === 'INACTIVE' ||
     act === 'OFF' ||
     act === 'BREAK' ||
     act.includes('MEAL BREAK') ||
     act.includes('LEVEL BREAK') ||
-    act.includes('INACTIVE')
+    act.includes('INACTIVE') ||
+    act.includes('REPORT-BUILDING') ||
+    act.includes('REPORT BUILDING') ||
+    act.includes('REPORT')
   ) {
     return false;
   }
 
-  // 2. Blocked slots (e.g. "X Ganesh Block", "Requirement Block", "Training", "Report-building time") DO count towards classes given!
+  // 2. Blocked slots (e.g. "X Ganesh Block", "Requirement Block", "Training") DO count towards classes given!
   if (isBlockedSlot(slot)) {
     return true;
   }
 
-  // 3. Demo / Temporary available slots ("X Demo", "X Temporary", "X", "AVAILABLE") DO NOT count towards classes given!
+  // 3. Demo / Temporary available slots ("X Demo", "X Temporary", "X", "AVAILABLE", "Report-building time") DO NOT count towards classes given!
   if (isDemoOrTemporarySlot(slot)) {
     return false;
   }
